@@ -405,26 +405,32 @@ and execute</p>
 <p>When it is time to publish a version of a document, in a Git BASH shell opened on the folder containing the mkdocs.yml file, issue the command</p>
 <pre><code>mkdocs build
 </code></pre>
-<p>to expand the Markdown version of the document into an HTML version into the /site folder. Then open the GIT GUI on the folder containing
-the mkdocs.yml file and use the GUI to create a new GIT repository on the local disk.</p>
-<p>Next create a repository to hold the documentation at GitHub. Click on the Settings tab for the newly created repository and scroll down to
-the GitHub Pages section. Then select the master branch source and click on the Save button.</p>
-<p>After this define a remote called origin for the document:</p>
-<pre><code>git remote add origin https://github.com/msmapricot/erefdoc
+<p>to expand the Markdown version of the document into an HTML version into the /site folder. Then open the Git GUI on the folder containing
+the mkdocs.yml file and use the GUI to create a new Git repository on the local disk.</p>
+<p>Next create repository opiddailydoc to hold the documentation at GitHub. </p>
+<p>After this, in the folder containing the mkdocs.yml file, define a remote called origin for the document:</p>
+<pre><code>git remote add origin https://github.com/tmhsplb/opiddailydoc
 </code></pre>
-<p>This command references the pre-created GitHub repository erefdoc. The remote only  needs to be defined once. It will be remembered by the 
+<p>This command references the GitHub repository opiddailydoc. The remote only needs to be defined once. It will be remembered by the 
 Git BASH shell. </p>
 <p>In the shell issue the following commands:</p>
 <pre><code>git add -A
 
-git commit -a -m 'Comment on new version of eref document'
+git commit -a -m 'Initial commit'
 
 git push origin master
 </code></pre>
-<p>This will push the master branch of the document to the repository identified by the remote called origin. To view the published document go to:</p>
-<pre><code>https://msmapricot.github.io/erefdoc/site
+<p>This will push the master branch of the document to the repository identified by the remote called origin. Then click on the Settings tab for the newly 
+created repository and scroll down to the GitHub Pages section. Select the master branch source and click on the Save button.</p>
+<p>Finally, to view the published document go to:</p>
+<pre><code>https://msmapricot.github.io/opiddailydoc/site
 </code></pre>
-<p>It may take several minutes before the changes are available.</p></div>
+<p>Subsequent edits only require the commands</p>
+<pre><code>mkdocs build
+
+git push origin master
+</code></pre>
+<p>to update repository opiddailydoc at GitHub. It may take several minutes before edits are available.</p></div>
         </div>
 
         <footer class="col-md-12">
