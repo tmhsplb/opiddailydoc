@@ -1,19 +1,19 @@
 # Infrastructure
-The infrastructure of project OPID Daily refers to the tools and technologies used to develop OPID Daily, exclusive of the implementation itself. This
-section will be useful to a developer wanting to maintain and further develop OPID Daily.  It describes both the desktop development environment and the
-AppHarbor deployment environment for application OPID Daily.
+The infrastructure of project OPIDDaily refers to the tools and technologies used to develop OPIDDaily, exclusive of the implementation itself. This
+section will be useful to a developer wanting to maintain and further develop OPID Daily. It describes both the desktop development environment and the
+AppHarbor deployment environment for application OPIDDaily.
 
 ## Hosting Environments
-There are 3 hosting environments for OPID Daily: desktop, staging and production. They differ in the database connection string used by each.
+There are 3 hosting environments for OPIDDaily: desktop, staging and production. They differ in the database connection string used by each.
 The connection string is configured as the value of variable SQLSERVER_CONNECTION_STRING in the `<appSettings>` section of
 Web.config. The static value configured there is used by the desktop environment. The static value is overwritten by injection (at AppHarbor)
-when Eref is deployed to create either a staging or production release. The transformation files Web.Staging.config and Web.Release.config
+when OPIDDaily is deployed to create either a staging or production release. The transformation files Web.Staging.config and Web.Release.config
 play a role in these deployments. The staging deployment at AppHarbor has its Environment variable set to Staging to force Web.Staging.config
 to be used upon deployment. This is done in the Settings section of the deployed application. The production deployment at AppHarbor has its
 Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.
  
 ## Visual Studio Project
-The Visual Studio 2019 (Community Edition) project representing application OPID Daily was developed using an ASP.NET Identity 2.0 sample project 
+The Visual Studio 2019 (Community Edition) project representing application OPIDDaily was developed using an ASP.NET Identity 2.0 sample project 
 developed by Syed Shanu as a starting point. The project is described in the 
 [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role).
 
@@ -28,14 +28,24 @@ as the Project Url. These two actions create an application called OpidDaily und
 in a desktop version of IIS under this Url. Without this, the desktop IIS cannot be used to host the application. See the section on configuring IIS 
 below.
 
-Visual Studio incluse a SQL Server, but it is more convenient to have SQL Server Management Studio (SSMS) available. This requires a (lengthy) 
-download. The version of SSMS used for the development of the OPIDDaily application is v18.0. Note that SQLEXPRESS is a separate download from SSMS; it 
-does not come bundled with SSMS.
+Visual Studio includes the ability to view an installed SQL Server Express database, but it is more convenient to have SQL Server Management Studio 
+(SSMS) available for this purpose. This requires a (lengthy) download. The version of SSMS used for the development of the OPIDDaily application is 
+v18.0. Note that SQL Server Express is a separate download from SSMS; it does not come bundled with SSMS.
+
+New development in the OPIDDaily Visual Studio project will be done in the **staging** branch and deployed to the stagedaily application at AppHarbor.
+(See the section on Deployment.) After changes to the **staging** branch have been tested in the desktop environment, using the Visual Studio GutHub interface they will be commited and then pushed to the staging branch at GitHub. After changes have been tested, they will be merged into the **master** 
+branch of the project and from there deployed to application OPIDDaily at Appharbor.
+
+When the codebase is installed on a developer's Visual Studio instance on his/her machine by cloning the GitHub repository **OPIDDaily**, the developer
+must use Visual Sutdio to create a **staging** branch and then rebase this branch to **origin/staging**. This will allow the developer to see the 
+contents of the staging branch at GitHub. To pick up changes commited and pushed to GitHub in a remote **staging** branch, it is necessary to rebase the 
+local **staging** branch to **origin/staging**. This will cause the remote changes to appear in the local **staging** branch without the need to Fetch 
+and Pull them as is done between a remote **master** branch and a local **master** branch.
 
 ## SQL Server Express
 The desktop version of OPID Daily makes use of a SQL Server Express to store information about clients. 
  
-The SQL Server Express database for OPidDaily was created by executing the SQL query
+The SQL Server Express database for OPIDDaily was created by executing the SQL query
 
     create database OPIDDailyDB  
   
@@ -50,19 +60,18 @@ This query creates the database user NT AUTHORITY\NETWORK SERVICE. The second qu
 
       EXEC sp_addrolemember 'db_owner', 'NT AUTHORITY\NETWORK SERVICE'
       
-This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. These same two queries also need to be executed
-in the AppHarbor database to prepare it to communicate with IIS. See below for information about the AppHarbor deployment of OpidDaily.
+This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. These same two queries do not need to be executed
+in the AppHarbor database to prepare it to communicate with IIS. See below for information about the AppHarbor deployment of OPIDDaily.
 
-It is also necessary to change the application pool identity of application OpidDaily running under IIS to NETWORKSERVICE. See the section on configuring 
-IIS.
+It is also necessary to change the application pool identity of application OPIDDaily running under IIS to NETWORKSERVICE. See the section on configuring IIS.
 
 
 ## Entity Framework Code First
 An application based on Entity Framework Code First may have multiple data contexts referencing a single database, as is the case for application
 OPIDDaily. In application OPIDDaily a data context is reserved for database migrations used by the ASP.NET Identity subsystem.  
 
-Supporting multiple data contexts was enabled by some manual scaffolding in the code base. In the case of the OPIDDaily application this scaffolding 
-consisted  of creating a project folder called DataContexts with two subfolders: IdentityMigrations and OPIDDailyMigrations. Also, a new folder project 
+Supporting multiple data contexts was enabled by some manual scaffolding in the codebase. In the case of the OPIDDaily application this scaffolding 
+consisted  of creating a project folder called DataContexts with two subfolders: IdentityMigrations and OPIDDailyMigrations. Also, a new folder 
 called Entities was added to the OPIDDaily Visual Studio Solution to contain the classes defining the entities used by the solution.
 
 Before the code was run for the first time, the PowerShell command
@@ -78,7 +87,7 @@ which initiaized the IdentityDB data context. It is worth taking a look at these
 the application connection string through Config.ConnectionString. 
     
 Executing the above PowerShell command allows the ASP.NET Identity system to automatically update the OPIDDailyDB with the ASP.NET Identity tables 
-the first time the program is run. Running the program for the first time automaticlly also created the migration
+the first time the program is run. Running the program for the first time on the local IIS also automatically created the migration
 
     DataContexts\IdentityMigrations\201906051504117_InitialCreate.cs
     
@@ -161,15 +170,26 @@ Running the PowerShell command
     PM> update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration
 
 then caused table Visits to be created in database OPIDDailyDB by executing the Up method of the above migration. As desired, table Visits
-has a foreign key relationship to table Clients. To see this, use SSMS to study the columns of table Visits.
+has a foreign key relationship to table Clients. To see this, use SSMS to study the columns of table Visits. 
+
+Although the desired foreign key relationship exists between tables Cients and Visits, deleting a client from the Clients table does not by
+default perform a cascading deleted of any related records in the Visits table. The cascading delete must be performed manualy. To see how
+this is done, see method RemoveClients in the SuperadminController.
 
 Each additional database change requires a pair of commands: an add-migration command followed by an update-database command. 
 Executing an add-migration command creates a .cs file in the folder associated with the ConfigurationTypeName. Study this .cs file before executing the
 update-database command. If the database changes indicated in the .cs file are not correct, simply delete the .cs file before running the 
 update-database command and then try again.
 
+To generate a script for the most recent migration, go back one migration in the migration history. For example, the migration preceding the migration 
+ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the command
+
+    update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:PXXA
+
+The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor.
+
 ## Configuring IIS
-Development of the Eref application was performed under IIS on the localhost machine. This was done so that the development environment would match the deployment environment at AppHarbor as closely as possible.
+Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the deployment environment at AppHarbor as closely as possible.
 
 The localhost application server, Internet Information Services (IIS), was not pre-installed on the localhost; however, it is part of the operating system that can easily be activated. To activate IIS, go to the Programs section of the Control Panel and turn on the IIS feature:
 
@@ -187,15 +207,14 @@ In this section, check the checkboxes for
         
 if they are not already checked. This will cause additional Application Pools to be made available to IIS. 
 
-The Eref application is installed as an application under the Default Web Site in IIS as described in the section describing the Visual Studio Project.
-The Basic Settings dialog box for application Eref (accessible from the Actions pane of IIS), will give the physical path to the folder containing the 
-source code as
+The OPIDDaily application is installed as an application under the Default Web Site in IIS as described in the section describing the Visual Studio 
+Project. The Basic Settings dialog box for application Eref (accessible from the Actions pane of IIS), will give the physical path to the folder 
+containing the source code as
 
-    C:\Projects\Eref\Eref
+    C:\Projects\OpidDaily\OpidDaily
   
-The folder above this (`C:\Projects\Eref`) is the folder containing the project solution file, Eref.sln. Do not change it!
-Application Eref must be configured to use the application pool .NET v4.5. in the Basic Settings dialog box. (This application pool became 
-available by enabling the features described above.)
+This folder contains the project solution file, OPIDaily.sln. Do not change it! Application OPIDaily must be configured to use the application pool .NET 
+v4.5. in the Basic Settings dialog box. (This application pool became available by enabling the features described above.)
  
 Finally, change the application identity of the selected application pool (.NET v4.5) to NetworkService. To do this, highlight Application Pools on the
 IIS Connections panel. This will cause the available application pools to appear in the IIS body panel. Highlight the .NET v4.5 application pool and
@@ -206,11 +225,11 @@ IIS display.
 The dialog box contains a section labeled Process Model which contains an entry labeled Identity. Selecting the Identity entry adds an ellipsis next to
 the bold ApplicationPoolIdentity. Selecting the ellipsis brings up a dialog box with the pre-selected radio button Built-in account. Select
 NetworkService from the dropdown menu associated with this radio button. After approving this selection, the Identity column of the application pool
-.NET v4.5 will show NetworkService. See the xection on SQL Server Express for how to establish user NetworkService.
+.NET v4.5 will show NetworkService. See the section on SQL Server Express for how to establish user NetworkService.
 
 
 ## Git for Windows
-Visual Studio 2015 (Community Edition) comes with built-in support for GitHub. A new project can be added to Git source control on the desktop by simply
+Visual Studio 2019 (Community Edition) comes with built-in support for GitHub. A new project can be added to Git source control on the desktop by simply
 selecting `Add to Source Control` from the context menu of the Solution file in the Solution Explorer. Once a project is under Git source control it can 
 be added to a remote GitHub repository by using tools available through Visual Studio. However, a technique preferred by many developers is to use [Git
 for Windows](https://git-for-windows.github.io/). Git for Windows provides a BASH shell interface to GitHub which uses the same set of commands
@@ -220,52 +239,47 @@ menu of the folder to open a Git for Windows BASH shell. Then execute Git comman
 graphical version of most Git command line functions. To open Git GUI simply select `Git GUI Here` from Windows Explorer.
 
 ## GitHub
-A Main Street Ministries (MSM) account has been established at github.com with credentials:
 
-    User name: msmapricot
-    Email: apricot@msmhouston.org
-    Password: <secret>
+Application OPIDDaily is stored at GitHub as a repository under an account with the email address peter3418@ymail.com and account name tmhsplb.
 
-Git for Windows is used to create a remote to save to the MSM account. The remote is created in the Git BASH shell by opening the shell on the folder 
-which contains the OpidDaily.sln file (folder `C:/Projects/OPIDDaily`) and issuing the command
+Only user tmhsplb can deploy directly to this repository. Any other user needing to deploy a version of OPIDDaily to this repository 
+must be declared a collaborator on repository OPIDDaily by user tmhsplb. A collaborator is a user associated with a different account established at 
+GitHub.  
+ 
+Git for Windows was used to create a remote to save to this GitHub account. The remote was created in the Git BASH shell by opening the shell on the 
+folder which contains the OPIDDaily.sln file (folder `C:/Projects/OPIDDaily`) and issuing the command
 
-    git remote add origin https://github.com/msmapricot/opiddaily.git
+    git remote add origin https://github.com/tmhsplb/opiddaily.git
     
-Creating this remote only needs to be done once, because Git for Windows stores the remote in Visual Studio. To see this, go to the Team Explorer tab of
-the Visual Studio Solution Explorer and select Settings from the Welcome to GitHub for Visual Studio menu. Then select Repository Settings and find the
-remote called origin under the Remotes section.
+Creating this remote only needs to be done once, because Git for Windows stores the remote.
+
+To remove a remote use the command
+
+     git remote rm <remote>
+     
+The need for this may arise if there was a typo in the creation of <remote>.
 
 ## AppHarbor
 AppHarbor (appharbor.com) is a Platform as a Service Provider which uses Amazon Web Services infrastructure for hosting applications and Git as a 
 versioning tool. When an application is defined at AppHarbor, a Git repository is created to manage versions of the application's deployment.
-The Eref application is defined as an application at AppHarbor to create the production repository of the desktop application. The staging version
-of the desktop application is defined by a repository called SEref. The Eref repository at AppHarbor is maintained at the Catmaran paid subscription
-level and the SEref repository is maintained at the free Canoe subscription level.
+The OPIDaily application is defined as an application at AppHarbor to create the production repository of the desktop application. The staging version
+of the desktop application is defined by a repository called stagedaily. 
 
-A Main Street Ministries (MSM) account has been created at AppHarbor for deployment of the application. The credentials for this account are:
+The remote configured for OPIDDaily at AppHarbor is:
 
-    User name: msmapricot
-    Email: apricot@msmhouston.org
-    Password: <secret>
-
-Only user msmapricot can deploy directly to an application in the MSM account. Any other user needing to deploy to an application in the MSM account 
-must be declared a collaborator on this application. A collaborator is a user associated with a different account established at AppHarbor. For example, 
-my personal account at AppHarbor uses the user name tmhsplb. The user name tmhsplb has been added as a collaborator on the Eref application, thereby
-allowing me to deploy to this application.
-
-The remote configured for Eref in Visual Studio is:
-
-    https://msmapricot@appharbor.com/eref.git
+    https://tmhsplbt@appharbor.com/opiddaily.git
     
 This remote is configured from a Windows Git BASH shell by the command
 
-    git remote add eref https://msmapricot@appharbor.com/eref.git
-    
+    git remote add stagedaily https://tmhsplb@appharbor.com/opiddaily.git  
+ 
 After the remote is configured in the Git BASH shell, issuing the command
 
-    git push eref master
+    git push opiddaily master
     
-will deploy the master branch of Eref to AppHarbor as application Eref.
+will deploy the master branch of opiddaily to AppHarbor as application OPIDDaily, accessible through the URL
+
+   https://opiddaily.apphb.com
 
 If you reset your password at AppHarbor, the 'git push' command will no longer work from the Git BASH shell. You need to have git prompt you for your
 new password. To do this on a Windows 10 machine, go to
@@ -274,37 +288,41 @@ new password. To do this on a Windows 10 machine, go to
    
 and remove the AppHarbor entry under Generic Credentials. The next time you push, you will be prompted for your repository password.
 
-An application such as SEref deployed using the free Canoe subscription level at AppHarbor has limitations that make it unsuitable for production
-use. Under the Canoe subscription, the IIS application pool of application SEref has a 20 minute timeout, which forces SEref to spin up its resources
-again after each 20 minutes of idle time.
-
-The URL of the Canoe version is
-
-    https://eref.apphb.com
+An application such as OPIDDaily deployed using the free Canoe subscription level at AppHarbor has limitations that make it unsuitable for production
+use. Under the Canoe subscription, the IIS application pool of application OPIDDaily has a 20 minute timeout, which forces OPIIDDaily to spin up its 
+resources again after 20 minutes of idle time.
     
-The free Yocto version of SQL Server is used as an add-on to the Eref deployment. The Yocto version is free but has a limit of 20MB of storage space,
-which is adequate for development purposes.  
+The free Yocto version of SQL Server is used as an add-on to the OPIDDaily deployment. The Yocto version is free but has a limit of 20MB of storage 
+space, which is adequate for development purposes.  
 
-The remote configured for SEref in Visual Studio is:
+A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO NOT CREATE A SEPARATE REPOSITORY
+FOR STAGEDAILY AT GITHUB.
 
-    https://msmapricot@appharbor.com/seref.git
+The remote configured for stagedaily at AppHarbor is:
+
+    https://tmhsplbt@appharbor.com/stagedaily.git
     
 This remote is configured from a Windows Git BASH shell by the command
 
-    git remote add seref https://msmapricot@appharbor.com/seref.git
+    git remote add stagedaily https://tmhsplb@appharbor.com/stagedaily.git
     
 After the remote is configured in the Git BASH shell, issuing the command
 
-    git push seref master
+    git push stagedaily staging
     
-will deploy the master branch of Eref to AppHarbor as application SEref.
+will deploy the staging branch of OPIDDaily to AppHarbor as application stagedaily, accessible through the URL
 
-The production version of application Eref was created by changing the subsription of application Eref from Canoe to Catamaran. The URL of the 
-production version is still https://eref.apphb.com.
+    https://stagedaily.apphb.com
+
+All the tables created by Entity Framework migrations magically appeared in the staging version. The magic was probably caused by deployment of the
+codebase of the **staging** branch to AppHarbor. This branch contains all the migrations used by the **master** branch. However, there was one table 
+missing:the Invitations table. This table is not included in any migration, so it has to be added manually to the staging database. This is a simple 
+matter of using SSMS to script the table and executing the script (in SSMS) against the staging database.
+
+The scripts that needed to run on the desktop to establish the connection between Visual Studio and the desktop SQL Server did not need to be run
+against the staging database to establish communication with the AppHarbor server.
     
-It is possible to use AppHarbor to generate a custom domain name for an application, but this has not been done for the Eref application. The SQL 
-Server of the production version of Eref was upgraded from the free Yocto version to the paid uses the Nano version which has a 10GB storage limit. 
-The staging application SEref uses the free Canoe service and the free Canoe version of SQL Server.
+It is possible to use AppHarbor to generate a custom domain name for an application, but this has not been done for the OPIDDaily application.  
 
 On June 6, 2019 I ran into a problem when I first pushed my OPIDDaily solution from my laptop to its GitHub repository and tried to pull the resulting
 solution onto my desktop computer. When I tried to run the solution from my desktop it complained about missing part of the path /bin/roslyn/csc.exe.
@@ -315,25 +333,45 @@ I found a fix that worked at StackOverflow
 There were many proposed fixes, but the one that looked easiest to try was: unload project OPIDDaily and then reload it. This was the first fix
 I tried and it worked!
 
+## Deployment
+This section summarizes deployment to AppHarbor. Most of the information here can be found in the section on AppHarbor.
+
+There are two applications at AppHarbor: opiddaily and stagedaily. Application opiddaily is the deployment of the Visual Studio **master**
+branch of solution OPIDDaily. Application stagedaily is the deployment of the Visual Studio **staging** branch of solution OPIDDaily.
+
+After configuring the **master remote** the Visual Studio production branch can be deployed to AppHarbor by using the Git BASH Shell command
+
+    git push opiddaily master
+    
+AppHarbor willl automatically deploy application OPIDaily if the push results in a successful build. After AppHarbor finishes building and 
+deploying the code, application OPIDDaily can be viewed at
+
+    https://opiddaily.apphb.com
+    
+ After configuring the staging remote (see above) the Visual Studio staging branch can be deployed to AppHarbor by using the Git BASH Shell command
+ 
+    git push stagedaily staging
+    
+AppHarbor will not automatically deploy application stagedaily even if the build is successful. It is necessary to click on the Deploy button
+at AppHarbor to deploy a successful build of application stagedaily. This may be by design.
+
+After clicking the Deploy button at AppHarbor to deploy a successful build of application stagedaily, the application can be viewed at
+
+    https://stagedaily.apphb.com
+    
+Although there are two applications at AppHarbor, there is only a single repository at GitHub. The name of this single repository is OPIDDaily. The
+repository is by default focused on the **master** branch of the codebase but can be switched to the **staging** branch by using the GitHub interface.
+
 ## jqGrid
-Almost every page of the Eref application features a grid produced by the jQuery jqGrid component. It was installed into the Eref project by using
-the Package Manager command:
+Almost every page of the application OPIDDaily features a grid produced by the jQuery jqGrid component. It was installed into the OPIDDaily project by 
+using the Package Manager command:
 
     PM> Install-Package Trirand.jqGrid -Version 4.6.0
     
-There is a collection of [jqGrid Demos](http://trirand.com/blog/jqgrid/jqgrid.html) that was very helpful during the development of Eref.
-
-## log4net
-Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. This package was installed using the Visual Studio NuGet
-package manager. The application log for project OPidDaily is maintained as a database table as described in 
-[this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The article includes a script
-for creating table Log (renamed AppLog in application Eref). The script must be executed as a query in SSMS to create table AppLog in the database.
-
-The application log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is 
-overwritten when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
+There is a collection of [jqGrid Demos](http://trirand.com/blog/jqgrid/jqgrid.html) that was very helpful during the development of OPIDDaily.
 
 ## ELMAH
-Unhandled application errors are caught by ELMAH. Version 2.1.2 of Elamh.Mvc was installed in project OpidDaily by using the Visual Studio NuGet package
+Unhandled application errors are caught by ELMAH. Version 2.1.2 of Elamh.Mvc was installed in project OPIDDaily by using the Visual Studio NuGet package
 manager. By default, the ELMAH log can only be viewed on the server that hosts the application in which ELMAH is installed. To make the ELMAH log
 visible to a client remotely running the application, add
 
@@ -351,7 +389,11 @@ This will generate an unhandled error because the MVC routing system will not be
 
     opiddaily.apphb.com/elmah.axd
     
-to see that this error has been caught by ELMAH.
+to see that this error has been caught by ELMAH. On the localhost use
+
+    localhost/opiddaily/elmah.axd
+    
+to see the list of ELMAH errors.
 
 Installation of the Elmah.Mvc package adds the necessary DLL's and makes the necessary changes to Web.config to configure ELMAH for use. By default
 ELMAH will write to a database table called ELMAH_Error. The DDL Script definition of this table is found in a 
@@ -376,11 +418,7 @@ The `<sytem.web>` section of Web.config must configure
 in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor. It is also necessary to set the connection string alias
 as described in the Connection String section of the Database tab.
 
-## Google Maps
-The referral letter generated by OPidDaily includes a static Google Map showing the location of Main Street Ministries. A new copy of this map is 
-generated each time a referral letter is requested. The map is generated using the Google Maps static map API. The key for this API is stored in the
-`<appSettings>` section of Web.config under the name GmapKey.
-
+ 
 ## MkDocs
 This document was created using MkDocs as was the [MkDocs website](http://www.mkdocs.org/) itself. MkDocs was installed following the guide
 on [this page](https://www.sitepoint.com/building-product-documentation-mkdocs/). This guide is useful for setting up the environment; however,
@@ -432,7 +470,7 @@ created repository and scroll down to the GitHub Pages section. Select the maste
 
 Finally, to view the published document go to:
 
-    https://msmapricot.github.io/opiddailydoc/site
+    https://tmhsplb.github.io/opiddailydoc/site
    
 Subsequent edits only require the commands
 
