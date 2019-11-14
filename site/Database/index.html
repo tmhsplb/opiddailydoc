@@ -107,7 +107,7 @@ the AppHarbor database through SSMS.</p>
 <p>The same connection string displayed at AppHarbor is retrieved at runtime by accessing Config.ConnectionString, which returns the value of 
 SQLSERVER_CONNNECTION_STRING configured in the <code>&lt;appSettings&gt;</code> section of file Web.config. The statically configured value on file Web.Config points to 
 the OpidDailyDB on the desktop SQL Server Express. At runtime, AppHarbor will overwrite this statically configured value with the value displayed at 
-AppHarbor. See the section on the Connection String.</p>
+AppHarbor. See the section on the Connection String on this tab.</p>
 <h2 id="connection-string">Connection String</h2>
 <p>In the desktop environment, SSMS was used to create an empty project database by executing the SQL query</p>
 <pre><code>create database OpidDailyDB
@@ -191,7 +191,7 @@ Both users <strong>Client1</strong> and <strong>Client2</strong> are assigned th
 <li>Right click a database name</li>
 <li>Navigate to Reports &gt; Standard Reports &gt; Disk Usage</li>
 </ul>
-<p>This is important because of the 20MB limit of a free AppHarbor database. Use it to make sure the disk limits are not exceeded.</p>
+<p>This is important because of the 20MB disk space limit of a free AppHarbor database. Use it to make sure the disk limits are not exceeded.</p>
 <p>Application OPIDDaily allows the Superadmin user to delete client datbase records corresponding to previous days of operation. This must be done 
 periodically to avoid exceeding the 20MB limit.</p></div>
         </div>
