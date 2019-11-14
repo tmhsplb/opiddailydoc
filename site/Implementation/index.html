@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Implementation - OPIDDaily</title>
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap-3.0.3.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+
+                <!-- Collapsed navigation -->
+                <div class="navbar-header">
+                    <!-- Expander button -->
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="..">OPIDDaily</a>
+                </div>
+
+                <!-- Expanded navigation -->
+                <div class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li >
+                                <a href="..">Background</a>
+                            </li>
+                            <li >
+                                <a href="../Infrastructure/">Infrastructure</a>
+                            </li>
+                            <li >
+                                <a href="../Database/">Database</a>
+                            </li>
+                            <li class="active">
+                                <a href="./">Implementation</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li >
+                                <a rel="next" href="../Database/">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="disabled">
+                                <a rel="prev" >
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="main active"><a href="#implementation">Implementation</a></li>
+            <li><a href="#the-superadmin-user">The Superadmin User</a></li>
+            <li><a href="#mvc-routing">MVC Routing</a></li>
+            <li><a href="#role-controllers">Role Controllers</a></li>
+            <li><a href="#the-sharedcontroller">The SharedController</a></li>
+            <li><a href="#the-userscontroller">The UsersController</a></li>
+            <li><a href="#jqgrid">jqGrid</a></li>
+            <li><a href="#nowserving">NowServing</a></li>
+            <li><a href="#sessionhelper">SessionHelper</a></li>
+            <li><a href="#express-clients-and-existing-clients">Express Clients and Existing Clients</a></li>
+            <li><a href="#service-tickets">Service Tickets</a></li>
+            <li><a href="#signalr">SignalR</a></li>
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="implementation">Implementation</h1>
+<p>Application OPIDDaily is implemented as an ASP.NET Framework application using the ASP.NET MVC 5 project template provided by Visual Studio 2019 
+(Community Edition). It uses ASP.NET Identity 2.0 to define a  set of user roles. Each user role is associated with a separate MVC controller. 
+Controller inheritance is used to share editing functionality across user roles. </p>
+<p>It may be useful to upgrade application OPIDDaily to use the more modern ASP.NET Core technology. It may also be useful to proivde an alternative to the 
+free hosting service AppHarbor, which is currentl used by OPIDDaily. See the AppHarbor section of the Infratructure tab for details on this.</p>
+<p>The graphical user interface of OPIDDaily is built using Bootstrap 3.0.0. Each user role is associated with its own layout file which defines a 
+Bootstrap navbar containing links to the OPIDDaily features available to users in the role. The ASP.NET Identity system ensures that a user in a 
+specified role cannot visit any pages outside of those allowed to users in that role. (See the section on Role Controllers.)</p>
+<p>Because of its use of SignalR, application OPIDDaily will always require a server side component. See the section on SignalR on this tab for a
+discussion of this.</p>
+<h2 id="the-superadmin-user">The Superadmin User</h2>
+<p>OPIDDaily defines a pre-registered superadmin user who has privileges to</p>
+<ul>
+<li>create new roles</li>
+<li>invite new users to register in a pre-determined role</li>
+<li>add new agencies</li>
+</ul>
+<p>The credentials for the Superadmin user are configured on file Startup.cs. There is only a single user with role of Superadmin.</p>
+<h2 id="mvc-routing">MVC Routing</h2>
+<p>Application OPIDDaily uses only the default routing rule supplied by the Visual Studio MVC 5 template. This default routing rule is found in
+<code>.../App_Start/RoutConfig.cs</code>.</p>
+<pre><code>routes.MapRoute(
+  name: "Default",
+  url: "{controller}/{action}/{id}",
+  defaults: new { controller = "Users", action = "Index", id = UrlParameter.Optional }
+);
+</code></pre>
+<p>For the sake of simplicity, future development of application OPIDDaily should strive to keep this as the one and only routing rule. </p>
+<h2 id="role-controllers">Role Controllers</h2>
+<p>There is an MVC controller defined for each role defined by the superadmin user. Each controller defined for a role inherits from SharedController to 
+implement shared funtionality. The role controllers manage the views of application OPIDDaily. The implementation of each role controller
+defines methods that are accessible through the menubar defined on the layout file for the role. For example, the FrontDeskController - which implements
+the FrontDesk role - contains methods ExpressClient and ExistingClient (found on the SharedController) invoked from the menubar defined on file</p>
+<p>~/Shared/_FrontDesk.cshtml.</p>
+<p>This is the layout file for the FrontDesk role. Each view returned by the FrontDeskController includes this layout file, thereby ensuring that a
+user in the role of FrontDesk will only invoke methods defined by the FrontDeskController.</p>
+<p>Each other role controllers is implemented the same way: each has a defined layout file that is included in each view returned by the controller.
+The layout file defines a menubar that specifies the methods that users in the role can invoke.</p>
+<p>As protection against unauthorized access to methods of a role controller, use of each role controller is limited to users in the role associated with
+the controller. For example, the FrontDeskController is protected by the annotation</p>
+<pre><code>[Authorize(Roles = "FrontDesk")]
+</code></pre>
+<p>Access is then restricted by the functionality of ASP.NET Identity to authenticated users in role FrontDesk.</p>
+<h2 id="the-sharedcontroller">The SharedController</h2>
+<p>Each role controller derives from SharedController. The SharedController implements the shared editor functionality available to the different roles. </p>
+<h2 id="the-userscontroller">The UsersController</h2>
+<p>The UsersController controls access to the ASP.NET Identity tables used to store registered users and the roles they are in. The method
+UsersController.Index is the entry point for an authenticated user. The role an authenticated user is in determines the method the user will be
+redirected to from this entry point.</p>
+<h2 id="jqgrid">jqGrid</h2>
+<p>The entire implementation of application OPIDDaily is structured around instances of jqGrid appearing in MVC Views. Each jqGrid is initially populated
+by a call to an MVC action made through the url property of the grid. For example, the clientsGrid on view FrontDesk/Clients.cshtml is initially 
+populated by the call</p>
+<pre><code>"@Url.Action("GetClients", "FrontDesk)"
+</code></pre>
+<p>which is the value of the url argument to grid clientsGrid. (Method GetClients is found on the SharedController.)</p>
+<p>Each instance of a jqGride defines a <em>pager</em>, which defines the CRUD operations supported by the grid. Each CRUD operation is
+implemented by an MVC action of the role controller associated with the grid. </p>
+<p>Initial population of a grid, grid pagination, grid searching and grid CRUD operations are all supported by server side code.</p>
+<p>There is a collection of <a href="http://trirand.com/blog/jqgrid/jqgrid.html">jqGrid Demos</a> that was very helpful during the development of OPIDDaily.</p>
+<h2 id="nowserving">NowServing</h2>
+<p>An important concept in the implementation of OPIDDaily is the concept of the client currently being served by a registered OPIDDaily user. For example, 
+when a row in the clientsGrid defined on FrontDeskClients.cshtml is selected, the JavaScript function that is the value of the onSelectRow property of 
+the grid is invoked. When the function is invoked, the value passed to its nowServing argument is the id associated with the client represented by the 
+selected row. The function posts to the server side method NowServing of the FrontDeskController (found on SharedController) via the code</p>
+<pre><code>Url.Action("NowServing", "FrontDesk")
+</code></pre>
+<p>passing the JavaScript variable nowServing in the post as a result of the line </p>
+<pre><code>postData: { nowServing: nowServing }
+</code></pre>
+<p>Method SharedController/NowServing has an optional argument called nowServing. MVC data binding will cause this variable to be bound to the JavaScript 
+variable in the post.</p>
+<h2 id="sessionhelper">SessionHelper</h2>
+<p>The SessionHelper class found on fie DAL/SessionHelper.cs is the key method for managing state in application OPIDDaily. This class is used to store key 
+value pairs in the sesssion context private to each authenticated user.</p>
+<p>Managing the value of NowServing is a key use of the SessionHelper. Instead of having methods called GetNowServing and SetNowServing, the 
+SharedController uses polymorphism to define two methods called NowServing with different signatures. The NowServing method with zero arguments invokes
+method SessionHelper.Get and the NowServing method with optional argumnt nowServing invokes method SessionHelper.Set. These two NowServing methods are
+invoked by many methods on SharedController to implement editing functionality private to an autheticated user.</p>
+<p>The other usage of the SessionHelper class is to manage the the back button helper methods ServiceTicketBackButtonHelper and 
+SpecialReferralBackButtonHelper found on the SharedController. </p>
+<h2 id="express-clients-and-existing-clients">Express Clients and Existing Clients</h2>
+<p>A first time client to Operation ID is referred to as an Express Client. Determining whether a given client is an Express Client is done by consulting
+the Apricot database to determine whether the client has a <em>visit history</em>. A visit history is a list of services previously performed for a client.
+If a client is determined to be an Express Client, then a user in the role FrontDesk (a FrontDesk admin) must use the OPIDDaily interface to edit the 
+client and mark him/her as an Express Client.</p>
+<p>If consulting the Apricot database indicates that a client has a previous service history at Operation ID, then a FrontDesk admin must use the OPIDDaily
+interface to copy the history of previous visits to the <strong>Visits</strong> table. This table is related to the <strong>Clients</strong> table by a foreign key relationship.
+See the section Entity Framework Code First on the Infrastructure tab for a discussion of this foreign key relationship.</p>
+<p>Method AddClient of the SharedController receives the id returned by method Clients.AddVisit. This id will be the id of the client inserted into
+the <strong>Clients</strong> table. See <a href="https://stackoverflow.com/questions/5212751/how-can-i-get-id-of-inserted-entity-in-entity-framework">this StackOverflow article</a> for an explantion of the side effect of record insertion relied upon for this.
+The client with this id will become the NowServing client. (See the section NowServing.)</p>
+<p>The foreign key relationship existing between tables <strong>Clients</strong> and <strong>Visits</strong> is not supported by a cascading delete; deleting a client 
+from the <strong>Clients</strong> table does not by default perform a cascading delete of any related records in the <strong>Visits</strong> table. The cascading delete must be 
+performed manually. To see how this is done, see method RemoveClients in the SuperadminController.</p>
+<p>A client not marked as an Express Client is referred to as an Existing Client. A FrontDesk admin is responsible for using the interface to distinguish 
+between these two types of client. This has the advantage that a user in the role of Interviewer (an Interviewer admin) need not know the difference.
+An Interviewer admin prepares Service Tickets (see next section) which automatically include the service history which has been recorded by a FrontDesk 
+admin for Existing Clients.</p>
+<h2 id="service-tickets">Service Tickets</h2>
+<p>A primary goal of application OPIDDaily is the production of <em>Service Tickets</em>. A service ticket is a single piece of paper that shows the services
+requested by a given client together with the documents the client is supplying in support of his/her service request. In addition a service ticket
+provides a history of service requests from previous visits by the client, if any.</p>
+<p>Service Tickets are produced by an Interviewer Admin. The interviewing process begins by determining the service needs of a client together with
+documents the client is supplying in support of those needs. An Interviewer admin will use the OPIDDaily interface to capture this information. A
+client's history of previous visits to Operation ID will have already been recorded by a FrontDesk admin by consulting the Apricot database.</p>
+<p>After the Service Ticket for a client has been produced, an Interviewer admin will assist the client in filling out paperwork in support of service 
+sought. It is suggested that a client's Service Ticket be forwarded to a BackOffice admin before work on a client's paperwork begins. By passing
+the Service Ticket to a BackOffice admin, a client's service voucher(s) can be cut and recorded in Apricot while the client is busy with paperwork.
+In effect a client's BackOffice stage can proceed in parallel with his/her Interviewing stage once the Service Ticket has bee produced.</p>
+<h2 id="signalr">SignalR</h2>
+<p>Application OIDDaily uses version 2.4.1 of the JavaScript SignalR package installed via NuGet. SignalR is a push-technology used to inform authenticated
+users about the progress of an Operation ID client as he/she passes through the Operation ID pipeline. </p>
+<p>The SignalR connection hub is defined on file DAL/DailyHub.cs. Invoking a method of DailyHub in the server side code causes a push-notifcation to
+go out to all clients registered to the hub. For example, when a FrontDesk admin adds a new client to the jqGrid managed by the FrontDeskController,
+the method SharedController.AddClient will invoke DailyHub.Refresh. A call to the
+line</p>
+<pre><code>hubContext.Clients.All.refreshPage();
+</code></pre>
+<p>will send a push notification to all registered clients of the hub. Those clients listening for this notification, for example the view 
+Interviewer/Clients.cshtml, will act upon the notification. In this case, the action will be to refresh the jqGrid of clients displayed by the
+grid. In this way this grid is kept in synch with the grid to which the client was added by the FrontDesk admin.</p>
+<p>SignalR is also used by both the special users <strong>Client1</strong> and <strong>Client2</strong> to refresh the tablet computer displays used by these users. (See the section 
+Managing Users on the Database tab.) </p></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="Keyboard Shortcuts Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Keyboard Shortcuts</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
