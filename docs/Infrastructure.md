@@ -103,8 +103,9 @@ the first time the program is run. Running the program for the first time on the
     
 which specifes the code used to create the ASP.NET Identity tables. It is worth taking a look at this file.
 
-The first time the program was run, the Superadmin user, sa, was created in table **AspNetUsers** of the OPIDDaily database. (See the Database Diagram section on the Database tab.) User sa was created by method `Startup.Configuration` (part of Katana middleware) on the toplevel file 
-OPIDDaily\Startup.cs. This file specifies the user sa as the first user in role SuperAdmin (created on the file). It also points to the toplevel file 
+The first time the program was run, the Superadmin user, sa, was created in table **AspNetUsers** of the OPIDDaily database. (See the Database Diagram 
+section on the Database tab.) User sa was created by method Startup.Configuration (part of Katana middleware) on the toplevel file 
+Startup.cs. This file specifies the user sa as the first user in role SuperAdmin (created on the file). It also points to the toplevel file 
 Config.cs through the reference Config.SuperadminPassword, where the password of user sa is configured.
 
 This project used as its starting point the [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role)
@@ -483,7 +484,7 @@ Finally, to view the published document go to:
 
     https://tmhsplb.github.io/opiddailydoc/site
    
-Subsequent edits only require the commands
+Unless a new file is added to file `mkdocs.yml`, subsequent edits only require the commands
 
     mkdocs build
     
@@ -491,6 +492,13 @@ Subsequent edits only require the commands
 
     git push origin master
 
-to update repository opiddailydoc at GitHub. It may take several minutes before edits are available.
+to update repository opiddailydoc at GitHub. 
+
+If a new file is added to `mkdocs.yml` then 
+
+    git add -A
+    
+must be run before the `mkdocs build` command is run. This causes any new files to be added to the local git repository. In either case it may take 
+several minutes before edits are available.
    
    

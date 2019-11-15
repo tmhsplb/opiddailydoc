@@ -181,8 +181,9 @@ the first time the program is run. Running the program for the first time on the
 <pre><code>DataContexts\IdentityMigrations\201906051504117_InitialCreate.cs
 </code></pre>
 <p>which specifes the code used to create the ASP.NET Identity tables. It is worth taking a look at this file.</p>
-<p>The first time the program was run, the Superadmin user, sa, was created in table <strong>AspNetUsers</strong> of the OPIDDaily database. (See the Database Diagram section on the Database tab.) User sa was created by method <code>Startup.Configuration</code> (part of Katana middleware) on the toplevel file 
-OPIDDaily\Startup.cs. This file specifies the user sa as the first user in role SuperAdmin (created on the file). It also points to the toplevel file 
+<p>The first time the program was run, the Superadmin user, sa, was created in table <strong>AspNetUsers</strong> of the OPIDDaily database. (See the Database Diagram 
+section on the Database tab.) User sa was created by method Startup.Configuration (part of Katana middleware) on the toplevel file 
+Startup.cs. This file specifies the user sa as the first user in role SuperAdmin (created on the file). It also points to the toplevel file 
 Config.cs through the reference Config.SuperadminPassword, where the password of user sa is configured.</p>
 <p>This project used as its starting point the <a href="https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role">excellent CodeProject article ASP.NET MVC Security and Creating User Role</a>
 It was necessary to move the class ApplicationDbContext from file Models\IdentityModels.cs on the sample project to file DataContexts/IdentityDb.cs 
@@ -465,14 +466,19 @@ created repository and scroll down to the GitHub Pages section. Select the maste
 <p>Finally, to view the published document go to:</p>
 <pre><code>https://tmhsplb.github.io/opiddailydoc/site
 </code></pre>
-<p>Subsequent edits only require the commands</p>
+<p>Unless a new file is added to file <code>mkdocs.yml</code>, subsequent edits only require the commands</p>
 <pre><code>mkdocs build
 
 git commit -a -m '&lt;Comment for new commit&gt;'
 
 git push origin master
 </code></pre>
-<p>to update repository opiddailydoc at GitHub. It may take several minutes before edits are available.</p></div>
+<p>to update repository opiddailydoc at GitHub. </p>
+<p>If a new file is added to <code>mkdocs.yml</code> then </p>
+<pre><code>git add -A
+</code></pre>
+<p>must be run before the <code>mkdocs build</code> command is run. This causes any new files to be added to the local git repository. In either case it may take 
+several minutes before edits are available.</p></div>
         </div>
 
         <footer class="col-md-12">
