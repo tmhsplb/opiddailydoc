@@ -439,8 +439,8 @@ on [this page](https://www.sitepoint.com/building-product-documentation-mkdocs/)
 the syntax for the file mkdocs.yml has changed from that described in the guide. The new syntax can be found at in the User Guide section of
 [this document](https://www.mkdocs.org/user-guide/writing-your-docs/#configure-pages-and-navigation).
 
-An MkDocs document is a static website and can hosted by any service that supports static sites. This MkDocs document
-is hosted by
+An MkDocs document is a static website and can be hosted by any service that supports static sites. This MkDocs
+document is hosted by
 [GitHub Pages](https://pages.github.com/). The [Atom](http://atom.io/) open source text editor was used to
 develop the document on the desktop.
 An MkDocs document uses HTML Markdown for a desktop development version of a document. GitHub provides a
