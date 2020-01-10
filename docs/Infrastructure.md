@@ -254,7 +254,7 @@ must be declared a collaborator on repository OPIDDaily by user tmhsplb. A colla
 GitHub.  
 
 Git for Windows was used to create a remote to save to this GitHub account. The remote was created in the Git BASH shell by opening the shell on the
-folder which contains the OPIDDaily.sln file (folder `C:/VS2019Projects/OPIDDaily`) and issuing the command
+folder which contains the OPIDDaily.sln file (folder `C:/VS2019Projects/OPIDDaily/OPIDDaily`) and issuing the command
 
     git remote add origin https://github.com/tmhsplb/opiddaily.git
 
@@ -296,9 +296,9 @@ new password. To do this on a Windows 10 machine, go to
 and remove the AppHarbor entry under Generic Credentials. The next time you push, you will be prompted for your repository password.
 
 Application OPIDDaily is deployed using the free Canoe subscription level at AppHarbor. Under a Canoe subscription, the IIS application pool of
-pplication OPIDDaily has a 20 minute timeout, which forces OPIIDDaily to spin up its resources again after 20 minutes of idle time. This has
+application OPIDDaily has a 20 minute timeout, which forces OPIIDDaily to spin up its resources again after 20 minutes of idle time. This has
 not been a problem at Operation ID, because application OPIDDaily is in continuous use on the days Operation ID is open. However, the 20 minute
-timeout for the free Canoue version at AppHarbor would become a problem if OPIDDaily were extended to add features suitable for use by agencies that
+timeout for the free Canoe version at AppHarbor would become a problem if OPIDDaily were extended to add features suitable for use by agencies that
 partner with Operation ID. These agencies would require that OPIDDaily be available on demand. On demand service would require the use of a paid
 subscription level at AppHarbor.
 
@@ -307,8 +307,8 @@ space, which is adequate for many days of usage by Operation ID. However, the da
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.
 
-A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO NOT CREATE A SEPARATE REPOSITORY
-FOR STAGEDAILY AT GITHUB.
+A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO
+NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.
 
 The remote configured for stagedaily at AppHarbor is:
 
@@ -351,11 +351,12 @@ This section summarizes deployment to AppHarbor. Much of the information here ca
 There are two applications at AppHarbor: opiddaily and stagedaily. Application opiddaily is the deployment of the Visual Studio **master**
 branch of solution OPIDDaily. Application stagedaily is the deployment of the Visual Studio **staging** branch of solution OPIDDaily.
 
-After configuring the **master remote** the Visual Studio production branch can be deployed to AppHarbor by using the Git BASH Shell command
+After configuring the **opiddaily remote** the Visual Studio production branch can be deployed to AppHarbor by using
+the Git BASH Shell command
 
     git push opiddaily master
 
-AppHarbor willl automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
+AppHarbor will automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
 deploying the code, application OPIDDaily can be viewed at
 
     https://opiddaily.apphb.com

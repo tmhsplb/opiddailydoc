@@ -294,7 +294,7 @@ graphical version of most Git command line functions. To open Git GUI simply sel
 must be declared a collaborator on repository OPIDDaily by user tmhsplb. A collaborator is a user associated with a different account established at
 GitHub.  </p>
 <p>Git for Windows was used to create a remote to save to this GitHub account. The remote was created in the Git BASH shell by opening the shell on the
-folder which contains the OPIDDaily.sln file (folder <code>C:/VS2019Projects/OPIDDaily</code>) and issuing the command</p>
+folder which contains the OPIDDaily.sln file (folder <code>C:/VS2019Projects/OPIDDaily/OPIDDaily</code>) and issuing the command</p>
 <pre><code>git remote add origin https://github.com/tmhsplb/opiddaily.git
 </code></pre>
 <p>Creating this remote only needs to be done once, because Git for Windows stores the remote.</p>
@@ -325,17 +325,17 @@ new password. To do this on a Windows 10 machine, go to</p>
 </code></pre>
 <p>and remove the AppHarbor entry under Generic Credentials. The next time you push, you will be prompted for your repository password.</p>
 <p>Application OPIDDaily is deployed using the free Canoe subscription level at AppHarbor. Under a Canoe subscription, the IIS application pool of
-pplication OPIDDaily has a 20 minute timeout, which forces OPIIDDaily to spin up its resources again after 20 minutes of idle time. This has
+application OPIDDaily has a 20 minute timeout, which forces OPIIDDaily to spin up its resources again after 20 minutes of idle time. This has
 not been a problem at Operation ID, because application OPIDDaily is in continuous use on the days Operation ID is open. However, the 20 minute
-timeout for the free Canoue version at AppHarbor would become a problem if OPIDDaily were extended to add features suitable for use by agencies that
+timeout for the free Canoe version at AppHarbor would become a problem if OPIDDaily were extended to add features suitable for use by agencies that
 partner with Operation ID. These agencies would require that OPIDDaily be available on demand. On demand service would require the use of a paid
 subscription level at AppHarbor.</p>
 <p>The free Yocto version of SQL Server is used as an add-on to the OPIDDaily deployment. The Yocto version has a limit of 20MB of storage
 space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avoid exceeding the 20MB limit.
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.</p>
-<p>A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO NOT CREATE A SEPARATE REPOSITORY
-FOR STAGEDAILY AT GITHUB.</p>
+<p>A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO
+NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.</p>
 <p>The remote configured for stagedaily at AppHarbor is:</p>
 <pre><code>https://tmhsplbt@appharbor.com/stagedaily.git
 </code></pre>
@@ -366,10 +366,11 @@ I tried and it worked!</p>
 <p>This section summarizes deployment to AppHarbor. Much of the information here can be found in the section on AppHarbor.</p>
 <p>There are two applications at AppHarbor: opiddaily and stagedaily. Application opiddaily is the deployment of the Visual Studio <strong>master</strong>
 branch of solution OPIDDaily. Application stagedaily is the deployment of the Visual Studio <strong>staging</strong> branch of solution OPIDDaily.</p>
-<p>After configuring the <strong>master remote</strong> the Visual Studio production branch can be deployed to AppHarbor by using the Git BASH Shell command</p>
+<p>After configuring the <strong>opiddaily remote</strong> the Visual Studio production branch can be deployed to AppHarbor by using
+the Git BASH Shell command</p>
 <pre><code>git push opiddaily master
 </code></pre>
-<p>AppHarbor willl automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
+<p>AppHarbor will automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
 deploying the code, application OPIDDaily can be viewed at</p>
 <pre><code>https://opiddaily.apphb.com
 </code></pre>
