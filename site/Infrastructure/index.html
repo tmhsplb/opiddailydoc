@@ -126,7 +126,7 @@ built into the ASP.NET Identity 2.0 provider used by the project template, as is
 in a desktop version of IIS under this Url. Without this, the desktop IIS cannot be used to host the application. See the section on configuring IIS
 below.</p>
 <p>New development in the OPIDDaily Visual Studio project will be done in the <strong>staging</strong> branch and deployed to the stagedaily application at AppHarbor.
-(See the section on Deployment.) After changes to the <strong>staging</strong> branch have been tested in the desktop environment, using the Visual Studio GutHub
+(See the section on Deployment.) After changes to the <strong>staging</strong> branch have been tested in the desktop environment, using the Visual Studio GitHub
 interface they will be committed and then pushed to the staging branch at GitHub. After changes have been tested, they will be merged into the
 <strong>master</strong> branch of the project and from there deployed to application OPIDDaily at Appharbor.</p>
 <p>When the codebase is installed on a developer's Visual Studio instance on his/her machine by cloning the GitHub repository <strong>OPIDDaily</strong>, the developer
@@ -331,7 +331,7 @@ timeout for the free Canoue version at AppHarbor would become a problem if OPIDD
 partner with Operation ID. These agencies would require that OPIDDaily be available on demand. On demand service would require the use of a paid
 subscription level at AppHarbor.</p>
 <p>The free Yocto version of SQL Server is used as an add-on to the OPIDDaily deployment. The Yocto version has a limit of 20MB of storage
-space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avvoind exceeding the 20MB limit.
+space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avoid exceeding the 20MB limit.
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.</p>
 <p>A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO NOT CREATE A SEPARATE REPOSITORY
@@ -434,7 +434,7 @@ the syntax for the file mkdocs.yml has changed from that described in the guide.
 <a href="https://www.mkdocs.org/user-guide/writing-your-docs/#configure-pages-and-navigation">this document</a>.</p>
 <p>An MkDocs document is a static website and can hosted by any service that supports static sites. This MkDocs document
 is hosted by
-<a href="https://pages.github.com/">GitHub Pages</a>. The <a href="http://brackets.io/">Brackets</a> open source text editor was used to
+<a href="https://pages.github.com/">GitHub Pages</a>. The <a href="http://atom.io/">Atom</a> open source text editor was used to
 develop the document on the desktop.
 An MkDocs document uses HTML Markdown for a desktop development version of a document. GitHub provides a
 <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">cheatsheet for Markdown syntax</a>.</p>
@@ -451,9 +451,13 @@ mkdoc.yml file of the project and execute</p>
 </code></pre>
 <p>to expand the Markdown version of the document into an HTML version in the /site folder. Then open the Git GUI on the
 folder containing the mkdocs.yml file and use the GUI to create a new Git repository on the local disk.</p>
-<p>Next create repository opiddailydoc to hold the documentation at GitHub.</p>
+<p>Next at GitHub create repository opiddailydoc to hold the documentation. Then create a repository on the desktop
+machine
+to associate with the GitHub repository. Issue the following command in the folder containing the mkdocs.yml file:</p>
+<pre><code>git init
+</code></pre>
 <p>After this, in the folder containing the mkdocs.yml file, define a remote called origin for the document:</p>
-<pre><code>git remote add origin https://github.com/tmhsplb/opiddailydoc
+<pre><code>git remote add origin https://github.com/tmhsplb/opiddailydoc.git
 </code></pre>
 <p>This command references the GitHub repository opiddailydoc. The remote only needs to be defined once. It will be remembered by the
 Git BASH shell.</p>

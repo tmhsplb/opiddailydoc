@@ -29,7 +29,7 @@ in a desktop version of IIS under this Url. Without this, the desktop IIS cannot
 below.
 
 New development in the OPIDDaily Visual Studio project will be done in the **staging** branch and deployed to the stagedaily application at AppHarbor.
-(See the section on Deployment.) After changes to the **staging** branch have been tested in the desktop environment, using the Visual Studio GutHub
+(See the section on Deployment.) After changes to the **staging** branch have been tested in the desktop environment, using the Visual Studio GitHub
 interface they will be committed and then pushed to the staging branch at GitHub. After changes have been tested, they will be merged into the
 **master** branch of the project and from there deployed to application OPIDDaily at Appharbor.
 
@@ -303,7 +303,7 @@ partner with Operation ID. These agencies would require that OPIDDaily be availa
 subscription level at AppHarbor.
 
 The free Yocto version of SQL Server is used as an add-on to the OPIDDaily deployment. The Yocto version has a limit of 20MB of storage
-space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avvoind exceeding the 20MB limit.
+space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avoid exceeding the 20MB limit.
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.
 
@@ -440,7 +440,7 @@ the syntax for the file mkdocs.yml has changed from that described in the guide.
 
 An MkDocs document is a static website and can hosted by any service that supports static sites. This MkDocs document
 is hosted by
-[GitHub Pages](https://pages.github.com/). The [Brackets](http://brackets.io/) open source text editor was used to
+[GitHub Pages](https://pages.github.com/). The [Atom](http://atom.io/) open source text editor was used to
 develop the document on the desktop.
 An MkDocs document uses HTML Markdown for a desktop development version of a document. GitHub provides a
 [cheatsheet for Markdown syntax](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
@@ -463,11 +463,15 @@ When it is time to publish a version of a document, in a Git BASH shell opened o
 to expand the Markdown version of the document into an HTML version in the /site folder. Then open the Git GUI on the
 folder containing the mkdocs.yml file and use the GUI to create a new Git repository on the local disk.
 
-Next create repository opiddailydoc to hold the documentation at GitHub.
+Next at GitHub create repository opiddailydoc to hold the documentation. Then create a repository on the desktop
+machine
+to associate with the GitHub repository. Issue the following command in the folder containing the mkdocs.yml file:
+
+    git init
 
 After this, in the folder containing the mkdocs.yml file, define a remote called origin for the document:
 
-    git remote add origin https://github.com/tmhsplb/opiddailydoc
+    git remote add origin https://github.com/tmhsplb/opiddailydoc.git
 
 This command references the GitHub repository opiddailydoc. The remote only needs to be defined once. It will be remembered by the
 Git BASH shell.
