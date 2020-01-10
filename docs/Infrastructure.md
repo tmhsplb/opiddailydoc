@@ -66,7 +66,7 @@ configuring IIS.
 There is a bug in SSMS v18.0 that causes it to stop after launch; the splash screen will display and then SSMS will quit.
 [The fix for this](https://dba.stackexchange.com/questions/238609/ssms-refuses-to-start) is to edit file ssms.exe.config found in folder
 
-    C:\\Program Files (x86)\Microfsoft SQL Server Management Studio 18\Common7\IDE
+    C:\\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE
 
 and remove (or comment out) the line which has the text:
 
@@ -74,8 +74,8 @@ and remove (or comment out) the line which has the text:
 
 This should be around line 38. Then restart SSMS.
 
-SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability, but it was removed from
-v18.0. The capability has been added back to newer version of SSMS.
+SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability,
+but it was removed from v18.0. The capability has been added back to newer version of SSMS.
 
 ## Entity Framework Code First
 An application based on Entity Framework Code First may have multiple data contexts referencing a single database, as is the case for application

@@ -154,14 +154,14 @@ in the AppHarbor database to prepare it to communicate with IIS. See below for i
 configuring IIS.</p>
 <p>There is a bug in SSMS v18.0 that causes it to stop after launch; the splash screen will display and then SSMS will quit.
 <a href="https://dba.stackexchange.com/questions/238609/ssms-refuses-to-start">The fix for this</a> is to edit file ssms.exe.config found in folder</p>
-<pre><code>C:\\Program Files (x86)\Microfsoft SQL Server Management Studio 18\Common7\IDE
+<pre><code>C:\\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE
 </code></pre>
 <p>and remove (or comment out) the line which has the text:</p>
 <pre><code>&lt;NgenBind_OptimizeNonGac enabled="1" /&gt;
 </code></pre>
 <p>This should be around line 38. Then restart SSMS.</p>
-<p>SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability, but it was removed from
-v18.0. The capability has been added back to newer version of SSMS.</p>
+<p>SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability,
+but it was removed from v18.0. The capability has been added back to newer version of SSMS.</p>
 <h2 id="entity-framework-code-first">Entity Framework Code First</h2>
 <p>An application based on Entity Framework Code First may have multiple data contexts referencing a single database, as is the case for application
 OPIDDaily. In application OPIDDaily a data context is reserved for database migrations used by the ASP.NET Identity subsystem.  </p>

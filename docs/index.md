@@ -73,12 +73,3 @@ OPIDDaily will be available as a password protected website to registered users.
 The Infrastructure tab describes how project OPIDDaily is maintained on a desktop host and how it is deployed to the .NET hosting service AppHarbor.
 The Database tab describes how the OPIDDaily database is managed on the desktop and at AppHarbor. The Implementation tab provides some details
 concerning the implementation of OPIDDaily.
-
-## Users
-OPIDDaily is a role-based system. Each registered user will be assigned a user role by the OPIDDaily administrator. The role that a user is assigned
-will determine the OPIDDaily features available to the user. A user's assigned role will depend upon whether the user volunteers at the front desk,
-is a volunteer interviewer or is a back office volunteer. In addition, there will be a manager's role to be assigned to Operation ID managers who
-want to watch the client processing flow during a day of operation.
-
-The OPIDDaily administrator will be in the role of Superadmin and will have access to features necessary for the maintenance of application OPIDDaily.
-There will be only one Superadmin account, but the credentials for this account will be available to maintainers of the application.
