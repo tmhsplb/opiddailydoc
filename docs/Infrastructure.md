@@ -34,7 +34,7 @@ interface they will be committed and then pushed to the staging branch at GitHub
 **master** branch of the project and from there deployed to application OPIDDaily at Appharbor.
 
 When the codebase is installed on a developer's Visual Studio instance on his/her machine by cloning the GitHub repository **OPIDDaily**, the developer
-must use Visual Studio to create a **staging** branch and then rebase this branch to **origin/master**. This will cause the remote changes to appear in
+must use Visual Studio to create a **staging** branch and then rebase this branch onto **origin/master**. This will cause the remote changes to appear in
 the local **staging** branch without the need to Fetch and Pull them as is done between a remote **master** branch and a local **master** branch.
 
 ## SQL Server Express and SSMS
@@ -102,7 +102,7 @@ the first time the program is run. Running the program for the first time on the
 
     DataContexts\IdentityMigrations\201906051504117_InitialCreate.cs
 
-which specifes the code used to create the ASP.NET Identity tables. It is worth taking a look at this file.
+which specifies the code used to create the ASP.NET Identity tables. It is worth taking a look at this file.
 
 The first time the program was run, the Superadmin user, sa, was created in table **AspNetUsers** of the OPIDDaily database. (See the Database Diagram
 section on the Database tab.) User sa was created by method Startup.Configuration (part of Katana middleware) on the toplevel file
@@ -189,12 +189,13 @@ Executing an add-migration command creates a .cs file in the folder associated w
 update-database command. If the database changes indicated in the .cs file are not correct, simply delete the .cs file before running the
 update-database command and then try again.
 
-To generate a script for the most recent migration, go back one migration in the migration history. For example, the migration preceding the migration
-ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the command
+To generate a script for the most recent migration(s), go back in the migration history to where the recent migrations start. For example, the migration
+preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the command
 
     update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:PXXA
 
-The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor.
+The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor. executed at AppHarbor, the script will update the _MigrationHistory as well. If the script involves adding a table, then running it before the code is updated
+at AppHarbor will ensure that the table is ready for use when the code that references it is deployed.
 
 ## Configuring IIS
 Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the deployment environment at AppHarbor as closely as possible.
@@ -328,7 +329,7 @@ will deploy the staging branch of OPIDDaily to AppHarbor as application stagedai
 
 All the tables created by Entity Framework migrations magically appeared in the staging version. The magic was probably caused by deployment of the
 codebase of the **staging** branch to AppHarbor. This branch contains all the migrations used by the **master** branch. However, there was one table
-missing:the Invitations table. This table is not included in any migration, so it has to be added manually to the staging database. This is a simple
+missing: the Invitations table. This table is not included in any migration, so it has to be added manually to the staging database. This is a simple
 matter of using SSMS to script the table and executing the script (in SSMS) against the staging database.
 
 The scripts that needed to run on the desktop to establish the connection between Visual Studio and the desktop SQL Server did not need to be run
@@ -432,6 +433,99 @@ The `<sytem.web>` section of Web.config must configure
 in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor. It is also necessary to set the connection string alias
 as described in the Connection String section of the Database tab.
 
+## log4net
+Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. This package was installed using the Visual Studio NuGet
+package manager. The application log for project OPIDDaily is maintained as a database table as described in
+[this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The article includes a script
+for creating table Log (renamed AppLog in application OPIDDaily). The script must be executed as a query in SSMS to create table AppLog in the database.
+
+Table AppLog is created by the following script:
+
+    CREATE TABLE[dbo].[AppLog] (
+      [Id][int] IDENTITY(1, 1) NOT NULL,
+      [Date][datetime] NOT NULL,
+      [Thread][varchar](255) NOT NULL,
+      [Level][varchar](50) NOT NULL,
+      [Logger][varchar](255) NOT NULL,
+      [Message][varchar](max) NOT NULL,
+      [Exception][varchar](max) NULL)
+
+The application log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is
+overwritten when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
+
+log4net requires some additional configuration in Web.config. In the <configSections> section add:
+
+   <section name="log4net" type="log4net.Config.Log4NetConfigurationSectionHandler, log4net" />
+
+After the <configSections> section add the definition of the AdoNetAppender:
+
+   <log4net debug="true">
+      <appender name="AdoNetAppender" type="log4net.Appender.AdoNetAppender">
+        <!--Change to 10 or MORE. This is critical, after 10 messages then log to database-->
+        <bufferSize value="10" />
+        <connectionType value="System.Data.SqlClient.SqlConnection, System.Data, Version=1.0.3300.0,
+              Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+        <connectionStringName value="OpidDailyConnectionString" />
+        <commandText value="INSERT INTO AppLog ([Date],[Thread],[Level],[Logger],[Message],[Exception])
+               VALUES (@log_date, @thread, @log_level, @logger, @message, @exception)" />
+        <commandType value="Text" />
+        <!--<commmandText value="dbo.procLog_Insert"/> <commandType value="StoredProcedure"/>-->
+        <parameter>
+          <parameterName value="@log_date" />
+          <dbType value="DateTime" />
+           <layout type="log4net.Layout.RawTimeStampLayout" />
+         </parameter>
+         <parameter>
+           <parameterName value="@thread" />
+           <dbType value="String" />
+           <size value="255" />
+           <layout type="log4net.Layout.PatternLayout">
+              <conversionPattern value="%thread" />
+           </layout>
+         </parameter>
+         <parameter>
+            <parameterName value="@log_level" />
+            <dbType value="String" />
+            <size value="50" />
+            <layout type="log4net.Layout.PatternLayout">
+               <conversionPattern value="%level" />
+            </layout>
+         </parameter>
+         <parameter>
+            <parameterName value="@logger" />
+            <dbType value="String" />
+            <size value="255" />
+            <layout type="log4net.Layout.PatternLayout">
+               <conversionPattern value="%logger" />
+            </layout>
+          </parameter>
+          <parameter>
+             <parameterName value="@message" />
+               <dbType value="String" />
+               <size value="4000" />
+             <layout type="log4net.Layout.PatternLayout">
+                <conversionPattern value="%message" />
+             </layout>
+           </parameter>
+           <parameter>
+              <parameterName value="@exception" />
+              <dbType value="String" />
+              <size value="2000" />
+              <layout type="log4net.Layout.ExceptionLayout" />
+          </parameter>
+      </appender>
+      <root>
+         <level value="DEBUG" />
+            <!-- <appender-ref ref="RollingLogFileAppender" /> -->
+         <appender-ref ref="AdoNetAppender" />
+      </root>
+    </log4net>
+
+log4net must be initialized on file Global.asax.cs by including the configuration statement
+
+   log4net.Config.XmlConfigurator.Configure();
+
+Without this statement nothing will work even if log4net is correctly configured on Web.config.
 
 ## MkDocs
 This document was created using MkDocs as was the [MkDocs website](http://www.mkdocs.org/) itself. MkDocs was installed following the guide

@@ -92,8 +92,11 @@
             <li><a href="#the-sharedcontroller">The SharedController</a></li>
             <li><a href="#the-userscontroller">The UsersController</a></li>
             <li><a href="#jqgrid">jqGrid</a></li>
+            <li><a href="#jquery-datatables">jquery Datatables</a></li>
             <li><a href="#nowserving">NowServing</a></li>
+            <li><a href="#households">Households</a></li>
             <li><a href="#the-agencyid-data-field-in-table-aspnetusers">The AgencyId Data Field in table AspNetUsers</a></li>
+            <li><a href="#date-management">Date management</a></li>
             <li><a href="#the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in Table Clients</a></li>
             <li><a href="#sessionhelper">SessionHelper</a></li>
             <li><a href="#express-clients-and-existing-clients">Express Clients and Existing Clients</a></li>
@@ -172,8 +175,19 @@ populated by the call</p>
 implemented by an MVC action of the role controller associated with the grid.</p>
 <p>Initial population of a grid, grid pagination, grid searching and grid CRUD operations are all supported by server side code.</p>
 <p>There is a collection of <a href="http://trirand.com/blog/jqgrid/jqgrid.html">jqGrid Demos</a> that was very helpful during the development of OPIDDaily.</p>
+<h2 id="jquery-datatables">jquery Datatables</h2>
+<p>The Research Table is implemented as a server-side datatable. It is dependent on 2 packages from NuGet:</p>
+<pre><code>jquery.datatables  v1.10.15
+datatables.mvc5    v0.1.0
+</code></pre>
+<p>The first of the 2 packages adds folders:</p>
+<pre><code>~/Content/DataTables
+~/Scripts/DataTables
+</code></pre>
+<p>The packages should be loaded in the given order.</p>
 <h2 id="nowserving">NowServing</h2>
-<p>An important concept in the implementation of OPIDDaily is the concept of the client currently being served by a registered OPIDDaily user. For example,
+<p>By convention, wherever the code makes use of a variable with the name nowServing, its value is the id of a client that has been selected from a jqGrid.
+Understanding this convention greatly simplifies understanding the code base. For example,
 when a row in the clientsGrid defined on FrontDeskClients.cshtml is selected, the JavaScript function that is the value of the onSelectRow property of
 the grid is invoked. When the function is invoked, the value passed to its nowServing argument is the id associated with the client represented by the
 selected row. The function posts to the server side method NowServing of the FrontDeskController (found on SharedController) via the code</p>
@@ -184,6 +198,13 @@ selected row. The function posts to the server side method NowServing of the Fro
 </code></pre>
 <p>Method SharedController/NowServing has an optional argument called nowServing. MVC data binding will cause this variable to be bound to the JavaScript
 variable in the post.</p>
+<h2 id="households">Households</h2>
+<p>Table <strong>Clients</strong> is a list of clients and their dependents. Most clients represent only themselves but some have dependents. A client together with any
+dependents he or she may have is referred to as a <strong>household</strong>. The head of a household is a top level member of the table <strong>Clients</strong>. The HH field of
+each top level client C is set to 0, that is C.HH = 0. If client D is a dependent of client C then the HH field of client D points back to client C through
+the setting D.HH = C.Id. In fact, dependent D belongs to a subgrid of the jqGrid used to
+render the <strong>Clients</strong> table. Dependent D is added to the subgrid whose parent entry is the entry for client C. If client C is has dependents, then C.HeadOfHousehold
+will be set to true and the row rendering client C in the jqGrid will indicate that client C is the head of a household.</p>
 <h2 id="the-agencyid-data-field-in-table-aspnetusers">The AgencyId Data Field in table <strong>AspNetUsers</strong></h2>
 <p>Application OPIDDaily is used by users at Operation ID and by users representing agencies that refer clients to
 Operation ID. The AgencyId field in table <strong>AspNetUsrs</strong> will be set to 0 for Operation ID users (for example
@@ -193,6 +214,18 @@ table at Operation ID on a day of operation will be set to 0. The AgencyId of a 
 a referring agency will be set to the AgencyId of the referring agency. Clients are tagged in this way to allow
 Operation ID users to see all clients and to allow a users from a referring agency to see only the clients referred
 by that agency.</p>
+<h2 id="date-management">Date management</h2>
+<p>Dates are treated differently at AppHarbor from the way they are treated on the desktop. In both environments, a date is
+stored as the midnight hour. For example, March 26, 2020 is stored as 2020-03-26:00:00:00:000 in the desktop database as
+well as in the AppHarbor database. But if this date is stored in a ClientViewModel object and reported as the value of a jqGrid
+column using the date formatter, then the desktop reports it as 03/26/2020 whereas AppHarbor reports it as 03/25/2020. It is not
+clear why this happens, but a way to make both environments report 03/26/2020 is to offset the value stored in the view model by
+12 hours to noon (2020-03-26:12:00:00:000). This is for done several DateTime data fields in Clients.ClientEntityToClientViewModel.
+(A 1 hour offset was tried first, but it did not work.) The same 12 hour offsetting was done with the Date field in a VisitViewModel.
+This can be found on file DAL/Visits.cs.</p>
+<p>When a jqGrid row containing a date is edited the date posted to the server is the midnight time, not the offset to noon time.
+When the row is retrieved in a ClientViewModel, the time will again be offset by 12 hour to noon and will thus display as intended
+in the jqGrid.</p>
 <h2 id="the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in Table <strong>Clients</strong></h2>
 <p>When the TicketMaster adds a new client to the <strong>Clients* table the date the client is entered is recorded in the
 ServiceDate data field of table </strong>Clients<strong>. The same date is recorded in the Expiry data field. When a Case Manager
@@ -208,9 +241,7 @@ value pairs in the sesssion context private to each authenticated user.</p>
 <p>Managing the value of NowServing is a key use of the SessionHelper. Instead of having methods called GetNowServing and SetNowServing, the
 SharedController uses polymorphism to define two methods called NowServing with different signatures. The NowServing method with zero arguments invokes
 method SessionHelper.Get and the NowServing method with optional argumnt nowServing invokes method SessionHelper.Set. These two NowServing methods are
-invoked by many methods on SharedController to implement editing functionality private to an autheticated user.</p>
-<p>The other usage of the SessionHelper class is to manage the the back button helper methods ServiceTicketBackButtonHelper and
-SpecialReferralBackButtonHelper found on the SharedController.</p>
+invoked by many methods on SharedController to implement editing functionality private to an authenticated user.</p>
 <h2 id="express-clients-and-existing-clients">Express Clients and Existing Clients</h2>
 <p>A first time client to Operation ID is referred to as an Express Client. Determining whether a given client is an Express Client is done by consulting
 the Apricot database to determine whether the client has a <em>visit history</em>. A visit history is a list of services previously performed for a client.

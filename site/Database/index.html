@@ -87,8 +87,10 @@
         <li class="main active"><a href="#database">Database</a></li>
             <li><a href="#connection-string">Connection String</a></li>
             <li><a href="#database-diagram">Database Diagram</a></li>
+            <li><a href="#database-duplicates">Database Duplicates</a></li>
             <li><a href="#managing-users">Managing Users</a></li>
             <li><a href="#database-utilization">Database Utilization</a></li>
+            <li><a href="#rebuilding-the-research-table">Rebuilding the Research Table</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -148,11 +150,22 @@ Infrastructure tab.) The technique for establishing a single connection string o
 <p>The command created a script file necessary to create the tables for this data context using all the migrations applied since the initial migration.
 Notice that there is no colon (:) following -SourceMigration in this command.</p>
 <p>To generate a script to run the Down methods of multiple down-migrations, do, for example,</p>
-<pre><code>PM&gt; Update-Database -ConfigurationTypeName OPIDDAILY.DataContexts.OpidDailyMigrations.Configuration -Script -TargetMigration: ExpressClient
+<pre><code>PM&gt; Update-Database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -TargetMigration: ExpressClient
 </code></pre>
-<p>Notice that there is a colon (:) following -TargetMigration in this command. This command will create a script to run the Down methods of all
+<p>Notice that there is a colon (:) following -TargetMigration in this command. This command will create a script to execute in SSMS the Down methods of all
 migrations since (and not including) migration ExpressClient. It is important to be able to generate this script if changes need to be backed out,
 because the deployed versions of application OPIDDaily do not use Entity Framework to manage the database.</p>
+<p>After the script to run the Down method has been run in SSMS, delete the reverted migration from the set of migrations maintained
+for the data context in Visual Studio.</p>
+<h2 id="database-duplicates">Database Duplicates</h2>
+<p>There are still many duplicates in the Apricot database as a result of the initial build from the legacy Access database. As an example,
+there are two records for the client John Harmon, DOB 9/11/1983:</p>
+<pre><code>        John Harmon, Record ID: 271978
+        John Marshall Harmon, Record ID: 4299
+</code></pre>
+<p>Since Service Tickets are built based on last name and DOB, both records will be used in building the Service Ticket for John Harmon. This can cause
+some confusion! Duplicate records are merged when they are discovered. The records for John Harmon may have been merged when the reader reads this
+documentation.</p>
 <h2 id="managing-users">Managing Users</h2>
 <p>OPIDDaily is a role based database application administered by a Superadmin user. The Superadmin user has the responsibilty of establishing a login
 account for each OPIDDaily user, which includes the use's role. This is done prevent a user from specifying his/her own role when logging in and to
@@ -161,7 +174,7 @@ roles.</p>
 <p>The Superadmin will be given a user name and email address for a new user. For example, if Mary Atwood would like to use the user name Mary and email
 address maryatwood@gmail.com, this request would be given to the Superadmin user. Provided that the user name Mary is not already in use, the Superadmin
 user would use a private interface to enter Mary Atwood in the <strong>Invitations</strong> table under UserName Mary (with FullName Mary Atwood) and Email Address
-maryatwood@gmail.com. The Supeadmin would also use the OPIDDaily interface to assign a role to user Mary Atwood in the <strong>Invitations</strong> table.</p>
+maryatwood@gmail.com. The Superadmin would also use the OPIDDaily interface to assign a role to user Mary Atwood in the <strong>Invitations</strong> table.</p>
 <p>The record in the <strong>Invitations</strong> table is in effect an invitation for Mary Atwood to register under user name Mary and email address
 maryatwood@gmail.com in the assigned role. The Superadmin will notify Mary that her account has been created and that she may
 register with application OPIDDaily using the credentials she has supplied together with a password of her own choosing.  </p>
@@ -179,23 +192,75 @@ has the pre-assigned role called FrontDesk. The users are the <strong>Screener</
 <strong>Screening</strong> and <strong>Checkin</strong>, respectively. (See the  Background tab for information about the pipeline stages.) Having dedicated accounts avoids the
 need to create unique accounts in the role of FrontDesk.</p>
 <p>There are also two additional special users called <strong>Client1</strong> and <strong>Client2</strong> corresponding to the pipeline stages <strong>Screening</strong> and <strong>CheckIn</strong>,
-respectively. (See the  Background tab for information about the pipeline stages.) During the screening stage, the <strong>Screener</strong> user will enter the name
+respectively. (See the  Background tab for information about the pipeline stages.) During the screening stage, the <strong>Screener</strong> user will enter the
+name
 and date of birth  of an entering client into the OPIDDaily database. To ensure that this information has been correctly entered, the <strong>Screener</strong> may
 click a button to  have this information appear on a small tablet computer which will be handed to the client for verification. This small tablet
 computer will be logged  into the OPIDDaily application as <strong>Client1</strong>. During the <strong>Checkin</strong> stage, by consultng the Apricot database, the
 <strong>TicketMaster</strong>  user will record any  previous visit history by a screened client in the OPIDDaily database. If previous visits indicate that the
-screened client is ineligible for a service  being  sought, the <strong>TicketMaser</strong> may click a button to have the visit history appear on a second small
+screened client is ineligible for a service  being  sought, the <strong>TicketMaster</strong> may click a button to have the visit history appear on a second small
 tablet computer which  will be handed to the client.  This second small tablet computer will be logged into the OPIDDaily application as <strong>Client2</strong>.
 Both users <strong>Client1</strong> and <strong>Client2</strong> are assigned the role FrontDesk.</p>
 <h2 id="database-utilization">Database Utilization</h2>
-<p>SSMS can be used to check on the utilization of a datbase. To do so:</p>
+<p>AppHarbor allows 20MB of database storage with the free SQL Server. The current utilization can be checked at AppHarbor by selecting the
+SQL Server used by application OPIDDaily and following the "Go to server" link. As of February 8, 2020 10.2MB out of the free 20MB are in
+use. This database contains 32,500 checks which were cut since 2013. Of these, between 24,00 and 28,000 checks were cut over the past 4 years.
+This suggests that there is enough capacity in the free database to run for at least 3 more years before approaching the 20MB limit. The disk
+utilization should be monitored periodically to make sure the limit is not exceeded. Currently an upgrade to 10GB of space would cost $10/month.
+This should be an affordable expense when the time comes that the additional space is needed.</p>
+<p>SSMS can be used to check on the utilization of a database. To do so:</p>
 <ul>
 <li>Right click a database name</li>
 <li>Navigate to Reports &gt; Standard Reports &gt; Disk Usage</li>
+<li>Navigate to Reports &gt; Standard Reports &gt; Disk Usage By Table</li>
 </ul>
-<p>This is important because of the 20MB disk space limit of a free AppHarbor database. Use it to make sure the disk limits are not exceeded.</p>
-<p>Application OPIDDaily allows the Superadmin user to delete client datbase records corresponding to previous days of operation. This must be done
-periodically to avoid exceeding the 20MB limit.</p></div>
+<p>Although this can be done, the single number reported by AppHarbor is easier to understand.</p>
+<h2 id="rebuilding-the-research-table">Rebuilding the Research Table</h2>
+<p>In February 2020 application OPIDChecks was merged into application OPIDDaily for the sake of having a single application that performs
+both functions. The merge required the Research Table to be added to application OPIDDaily. The merger of the two applications had the additional
+benefit of allowing application OPIDDaily to use the Research Table to populate the "visit history" of clients with previous visits.</p>
+<p>The Research Table was rebuilt by loading files created by two different reports in Apricot:</p>
+<pre><code>Bounded Research Report was used to create files:
+  Bounded Research Table 2017
+  Bounded Research Table 2018
+  Bounded Research Table 2019
+  Bounded Research Table 2020
+
+ Imported from Access DB was used to create files:
+   Imported from Access DB 2010
+   Imported from Access DB 2011
+   Imported from Access DB 2012
+   Imported from Access DB 2013
+   Imported from Access DB 2014
+   Imported from Access DB 2015
+   Imported from Access DB 2016
+</code></pre>
+<p>With the exception of files</p>
+<pre><code>  Imported from Access DB 2010
+  Imported from Access DB 2011
+  Imported from Access DB 2012
+</code></pre>
+<p>which contain very little (and incomplete) data these files were loaded to rebuild the Research Table.</p>
+<p>This was a one time rebuild of the Research Table at AppHarbor. As the Research Table became large it as necessary to split Files
+  of import data containing a year's worth of data into multiple files to allow the import to be processed. If the amount of data in
+  a given file was still too much, a</p>
+<pre><code>  504 Gateway Timeout Error
+</code></pre>
+<p>was generated. When this happened, a new instance of OPID Daily was opened. The new instance would resume loading until completion.
+  The second instance did not generate a gateway timeout error.</p>
+<p>Moving forward, if the Research Table becomes corrupt, then it can
+  be rebuilt from scratch by regenerating and rerunning these reports. Rebuilding the Research Table from scratch takes several hours. A rebuilt
+  Research Table should not be used for 24 hours to allow for indexes to be built. Until the indexes have been built, searching the Research Table
+  will be sluggish.</p>
+<p>AppHarbor does not perform a daily backup on a free SQL Server.
+  It is necessary to step up to a dedicated SQL Server to receive daily backups. The cheapest dedicated SQL Server offers 100GB of
+  storage space at a cost of $200/month. Either the free SQL Server or the upgrade to 10GB of storage at $10/month seems preferable.</p>
+<p>However, it is necessary to keep the Research Table updated. This is done on a weekly basis by running the Apricot report
+  called OPID Daily and providing the date of the Monday beginning a week of operation after the week is complete.
+  For example the OPID Daily report should be run using Monday February 10, 2020 as the filter date on any day following
+  Thursday February 13, 2020. This will create a file containing all the records modified during the week starting on Monday February 10.</p>
+<p>If this file is created on Monday February 17, then it should be renamed as: OPIDDaily 02172020. By merging the renamed file into application
+  OPIDDaily, the Research Table will be brought up to date.</p></div>
         </div>
 
         <footer class="col-md-12">
