@@ -91,6 +91,7 @@
             <li><a href="#managing-users">Managing Users</a></li>
             <li><a href="#database-utilization">Database Utilization</a></li>
             <li><a href="#rebuilding-the-research-table">Rebuilding the Research Table</a></li>
+            <li><a href="#updating-the-opiddaily-database">Updating the OPIDDaily Database</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -99,7 +100,7 @@
 <p>OPIDDaily is a database driven application built using SQL Server technology. In the desktop environment OPIDDaily is built using the Sql Server Express
 database engine. In the online environment at AppHarbor a full SQL Server is used. The two versions are compatible with each other with respect to the
 database features used. SQL Server Management Studio v18.0 (SSMS) is used to manage both database engines. In the desktop environment, Windows
-Authentication is used to connect to the Sql Server Express database. In the online enviroment, SQL Server Authentication is used to connect to the
+Authentication is used to connect to the Sql Server Express database. In the online environment, SQL Server Authentication is used to connect to the
 SQL Server database.</p>
 <p>When application OPIDDaily was created at AppHarbor, a free version of SQL Server was added on through the AppHarbor interface. The connection string
 to this SQL Server is found by selecting the SQL Server add-on and following the "Go to SQL Server" link on the page that appears. The value of this
@@ -116,7 +117,7 @@ AppHarbor. See the section on the Connection String on this tab.</p>
 </code></pre>
 <p>The Visual Studio Server Explorer (found under the OPIDDaily project View menu) was then used to discover the connection string to database OpidDailyDB
 by creating a new Data Connection to it and copying the Connection String property of the data connection as the value of the variable
-SQLSERVER_CONNECTION_STRING in the <code>&lt;appSettings&gt;</code> section of Web.config. The value is accessed on files IDentityDB.cs and OpidDailyDB.cs by
+SQLSERVER_CONNECTION_STRING in the <code>&lt;appSettings&gt;</code> section of Web.config. The value is accessed on files IdentityDB.cs and OpidDailyDB.cs by
 reading the value of the static variable Config.ConnectionString.</p>
 <p>The online version of OPIDDaily is hosted as an application at AppHarbor and it uses a database server provided as an add-on. The add-on database server
 includes a database which serves as the application database, so it is not necessary to create the application database as was done above for the
@@ -135,12 +136,49 @@ Web.config by the value of the connection string for the AppHarbor database. Thi
 pasted into the Paint tool. Inside of Paint it is saved as a .PNG file. Version 18.0 of SSMS does not allow database diagrams to be created. Newer
 releases have restored this capability. But the diagram seen here was created by an earlier release of SSMS, which did have the ability to create
 database diagrams.</p>
-<p>The 3 tables in the upper left of the above diagram are created by ASP.NET Identity 2.0 to manage registered users of OPIDDaily. The 3 tables are
+<p>The main tables of application OPIDDaily are the tables <strong>Clients</strong>, <strong>Visits</strong>, <strong>RChecks</strong> and <strong>AncientChecks</strong>, The table <strong>Clients</strong> stores
+clients, their service requests and their supporting documents, and this is the reason that table <strong>Clients</strong> has so many data fields. Some of this data
+could have been factored out by the use of many-to-many relationship tables, but it was decided that a single table would be simpler. Notice that
+many of the data fields in table <strong>Clients</strong> are bit fields. As a result, a record in the table does not consume much database storage.</p>
+<p>The table <strong>Visits</strong> is related to the <strong>Clients</strong> table by the foreign key Id as there is a one-to-many relationship between a client and the visits
+he/she has made to Operation ID. The table <strong>RChecks</strong>
+is used to store check data. It is referenced to the <strong>Clients</strong> table by the RecordID and InterviewRecordID data fields. These two data fields identify
+a client in the Apricot database together with a particular visit the client has made to Operation ID. The service history of a client consists of
+the checks that haven been issued to the client. To retrieve the service history from the table <strong>RChecks</strong> the client is looked up by last name and DOB.
+This is not guaranteed to be a unique lookup, but it almost always is.</p>
+<p>The name <strong>RChecks</strong> is short for <strong>research checks</strong>. The <strong>RChecks</strong> table was so named because checks whose disposition is unknown are said to be under
+research until their disposition is resolved. The <strong>AncientChecks</strong> table was added to relieve the overcrowding of the <strong>RChecks</strong> table. Originally table
+<strong>RChecks</strong> contained all the checks that have been issued by Operation ID. Updating this table with a batch of new checks became slow as the table grew. So, the
+table was split up into 2 tables by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the <strong>AncientChecks</strong> table contains
+checks from the years 2016 and 2017.</p>
+<p>There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
+from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as part of a
+client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed that clients
+from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment of the OPIDDaily
+website is given 20MB of data space on a shared SQL Server. The stored check data consumes 15.2MB of the free space on the shared SQL Server. Adding the
+checks from the years 2013-2015 would nearly fill up the free 20MB.</p>
+<p>At some point it will be useful to reconsider the twice-in-a-lifetime policy for client service. Ten years from now it is unlikely that clients from fifteen years
+in the past will come to Operation ID seeking service. So there is no advantage to storing checks from the distant past. A data retention policy should be
+formulated to purge the database of old records. Social Solutions does not allow customers to delete records from their own Apricot database. To delete records
+a customer must request that Social Solutions do it for them.</p>
+<p>The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were put
+in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would be no need
+to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a twice-in-a-lifetime
+policy, Operation ID could support a twice-in-five-years policy. This would make OPID Daily a "self-contained" website. .</p>
+<p>When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a visit history
+and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can be generated at the
+front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by consulting the Apricot
+database. In most cases, the checks from visits prior to 2015 will not include a disposition and their disposition will need to be determined in the back office
+by consulting the Quickbooks ledger. The inconvenience of this is outweighed by its rarity and the desire to stay below the 20MB free limit of data storage at
+AppHarbor.</p>
+<p>The table <strong>ELMAH_Error</strong> stores error messages generated by uncaught application errors. See the section on ELMAH on the Infrastructure tab. The table
+<strong>AppLog</strong> contains the log messages generated by the application using log4net. See the section on log4net on the Infrastructure tab.</p>
+<p>The 3 AspNet tables in the center the above diagram are created by ASP.NET Identity 2.0 to manage registered users of OPIDDaily. The 3 tables are
 managed by their own data context which cannot be augmented by additional tables.  However, data fields can be added to table <strong>AspNetUsers</strong> if
 necessary. The data field AgencyId was added to table <strong>AspNetUsers</strong> to store the unique AgencyId stored in table
 <strong>Agencies</strong> by the Superadmin user. (The AgencyId of an Operation ID user - example the TicketMaster user -  is
-always 0.) Non ASP.NET Identity tables in the diagram are managed by a separate data context.</p>
-<p>The 2 data contexts of project OPIDDaily are referred to as IdentityDb and OpidDailyDB. (See the section Entity Framework Code First of the
+always 0.) The non-ASP.NET Identity tables in the diagram are managed by a separate data context.</p>
+<p>The Visual Studio project OPIDDaily has 2 data contexts called IdentityDb and OpidDailyDB. (See the section Entity Framework Code First of the
 Infrastructure tab.) The technique for establishing a single connection string over 2 data contexts is described in
 <a href="https://app.pluralsight.com/player?author=scott-allen&amp;name=aspdotnet-mvc5-fundamentals-m6-ef6&amp;mode=live&amp;clip=1&amp;course=aspdotnet-mvc5-fundamentals">Scott Allen's Pluralsight video</a>.</p>
 <p>The tables belonging to data context OpidDailyDB were created at AppHarbor using a script file. This was done by running the command</p>
@@ -154,9 +192,9 @@ Notice that there is no colon (:) following -SourceMigration in this command.</p
 </code></pre>
 <p>Notice that there is a colon (:) following -TargetMigration in this command. This command will create a script to execute in SSMS the Down methods of all
 migrations since (and not including) migration ExpressClient. It is important to be able to generate this script if changes need to be backed out,
-because the deployed versions of application OPIDDaily do not use Entity Framework to manage the database.</p>
-<p>After the script to run the Down method has been run in SSMS, delete the reverted migration from the set of migrations maintained
-for the data context in Visual Studio.</p>
+because the deployed versions of application OPIDDaily cannot be managed by the Package Manager (PowerShell) window available in Visual Studio. The script
+to execute the Down method must be run in SSMS. After the script has been executed, the reverted migration may be safely deleted from the set of migrations
+maintained for the data context in Visual Studio.</p>
 <h2 id="database-duplicates">Database Duplicates</h2>
 <p>There are still many duplicates in the Apricot database as a result of the initial build from the legacy Access database. As an example,
 there are two records for the client John Harmon, DOB 9/11/1983:</p>
@@ -167,9 +205,9 @@ there are two records for the client John Harmon, DOB 9/11/1983:</p>
 some confusion! Duplicate records are merged when they are discovered. The records for John Harmon may have been merged when the reader reads this
 documentation.</p>
 <h2 id="managing-users">Managing Users</h2>
-<p>OPIDDaily is a role based database application administered by a Superadmin user. The Superadmin user has the responsibilty of establishing a login
-account for each OPIDDaily user, which includes the use's role. This is done prevent a user from specifying his/her own role when logging in and to
-force the user into his/her assigned role instead. See the introduction and Role Controllers sections of the Impementation tab for a discussion of
+<p>OPIDDaily is a role-based database application administered by a Superadmin user. The Superadmin user has the responsibilty of establishing a login
+account for each OPIDDaily user, which includes the user's role. This is done to prevent a user from specifying his/her own role when logging in and to
+force the user into his/her assigned role instead. See the introduction and Role Controllers sections of the Implementation tab for a discussion of
 roles.</p>
 <p>The Superadmin will be given a user name and email address for a new user. For example, if Mary Atwood would like to use the user name Mary and email
 address maryatwood@gmail.com, this request would be given to the Superadmin user. Provided that the user name Mary is not already in use, the Superadmin
@@ -183,6 +221,8 @@ found in the <strong>Invitations</strong> table, Mary's attempt to register will
 <strong>AspNetUsers</strong> table using the password she has specified and using the role assigned by the Superadmin, which has been stored in the <strong>Invitations</strong>
 table. On subsequent visits to OPIDDaily, Mary may simply login with the credentials established by her registration. When logged in she will be
 recognized in her assigned role.</p>
+<p>In practice, the Superadmin has created all login accounts and registered all users. This implies that passwords are not secret. However, this has not
+been an issue. For the convenience of not having to self-register users have been willing to sacrifice a little privacy.</p>
 <p>User email addresses do not need to be unique per account. This is not the default behavior; it is enabled by the setting</p>
 <pre><code>RequireUniqueEmail = false
 </code></pre>
@@ -239,9 +279,12 @@ benefit of allowing application OPIDDaily to use the Research Table to populate 
 <pre><code>  Imported from Access DB 2010
   Imported from Access DB 2011
   Imported from Access DB 2012
+  Imported from Access DB 2013
+  Imported from Access DB 2014
 </code></pre>
-<p>which contain very little (and incomplete) data these files were loaded to rebuild the Research Table.</p>
-<p>This was a one time rebuild of the Research Table at AppHarbor. As the Research Table became large it as necessary to split Files
+<p>which contain very little (and incomplete) data these files were loaded to rebuild the Research Table. See the section on the
+  Database Diagram for more information.</p>
+<p>This was a one time rebuild of the Research Table at AppHarbor. As the Research Table became large was necessary to split Files
   of import data containing a year's worth of data into multiple files to allow the import to be processed. If the amount of data in
   a given file was still too much, a</p>
 <pre><code>  504 Gateway Timeout Error
@@ -252,10 +295,12 @@ benefit of allowing application OPIDDaily to use the Research Table to populate 
   be rebuilt from scratch by regenerating and rerunning these reports. Rebuilding the Research Table from scratch takes several hours. A rebuilt
   Research Table should not be used for 24 hours to allow for indexes to be built. Until the indexes have been built, searching the Research Table
   will be sluggish.</p>
-<p>AppHarbor does not perform a daily backup on a free SQL Server.
-  It is necessary to step up to a dedicated SQL Server to receive daily backups. The cheapest dedicated SQL Server offers 100GB of
-  storage space at a cost of $200/month. Either the free SQL Server or the upgrade to 10GB of storage at $10/month seems preferable.</p>
-<p>However, it is necessary to keep the Research Table updated. This is done on a weekly basis by running the Apricot report
+<p>AppHarbor does not perform a daily backup on a free SQL Server. It is necessary to step up to a dedicated SQL Server to receive daily backups. The
+  cheapest dedicated SQL Server offers 100GB of storage space at a cost of $200/month. Either the free SQL Server or the upgrade to 10GB of storage at
+  $10/month seems preferable. For now, the Apricot database itself serves as a backup for the OPIDDaily database, since the OPIDaily database can be
+  rebuilt from the Apricot database as described.</p>
+<h2 id="updating-the-opiddaily-database">Updating the OPIDDaily Database</h2>
+<p>It is necessary to keep the Research Table updated. This is done on a weekly basis by running the Apricot report
   called OPID Daily and providing the date of the Monday beginning a week of operation after the week is complete.
   For example the OPID Daily report should be run using Monday February 10, 2020 as the filter date on any day following
   Thursday February 13, 2020. This will create a file containing all the records modified during the week starting on Monday February 10.</p>

@@ -85,22 +85,22 @@ processing mentioned above, but it has nevertheless proved to be valuable. A cli
 is seeking. A Service Ticket for a client with previous history summarizes the requested services in a tabular format.
 
 ## Remote Operation ID
-In March 2020  Operation ID was shutdown due to the coronavirus pandemic. At the time of this writing (April 2020) Operation ID is still shut down
+In March 2020 Operation ID was shutdown due to the coronavirus pandemic. At the time of this writing (April 2020) Operation ID is still shut down
 and it is not known when it will reopen. When the shutdown began, work was begun on a simple extension of OPIDDaily that would allow for providing
-identification services remotely. Remote operation replaces the same-day-service model of identification services that have historically been provided
-by Operation ID by a virtual platform that allows case managers to submit service requests to Operation ID through the OPIDDaily website. The service
-request replaces the referral letter used in the same-day-service model described above.
+identification services remotely. Remote operation is the analog of the same-day-service model of identification services that have historically
+been provided by Operation ID by a virtual platform that allows case managers to submit service requests to Operation ID through the OPIDDaily website.
+The service request is an electronic replacement for the referral letter used in the same-day-service model described above.
 
-Under the same-day-service model, there is only a single logged in user, the **TicketMaster**. The TicketMaster is a volunteer who sits
-at the front desk and uses OPIDDaily to generate a Service Ticket for each client with a history of previous visits. In the remote service model,
+Under the same-day-service model, there is only a single logged in user, the *TicketMaster*. The TicketMaster is a volunteer who sits
+at the front desk and uses OPIDDaily to generate a Service Ticket for each client with a history of previous visits. In the remote operations model,
 case managers who work at Operation ID partner agencies login to the OPIDDaily website to submit service requests on behalf of their clients. The last
-step of generating a service request for a client is the printing and signing of the **Case Manager Voucher**. The Case Manager Voucher is a
-piece of paper describing the service request. It includes a disclaimer that makes the client aware that requested services may be denied
+step of generating a service request for a client is the printing and signing of the *Case Manager Voucher*. The Case Manager Voucher is a
+piece of paper describing a service request. It includes a disclaimer that makes the client aware that requested services may be denied
 because of previous visits to  Operation ID for the same services. The Case Manager Voucher must be signed by both the client and the case manager.
-The voucher will be retained by the case manager, who will later redeem it for checks covering the requested services.
+The voucher will be retained by the case manager, who will later redeem it for checks covering the expenses of the requested services.
 
-A service request submitted by a case manager appears on a dashboard monitored by an Operation ID employee. The dashboard is simply a list of
-service requests placed by case managers working at different agencies. When a new service request appears on the dashboard, its arrival is first
+A service request submitted by a case manager appears on a service requests dashboard monitored by an Operation ID employee. The dashboard is simply
+a list of service requests placed by case managers working at different agencies. When a new service request appears on the dashboard, its arrival is first
 acknowledged by checking a checkbox on the request. This acknowledgment
 will be seen by the case manager who placed the request, informing him/her that Operation ID is aware of the request. The service request will
 next be used to generate a Service Ticket which will be printed and added to a collection of outstanding Service Tickets. When Service Tickets
@@ -112,18 +112,18 @@ Processing a Service Ticket in the back office is exactly the same process that 
 cut checks for services specified by a Service Ticket and recording the check numbers in the corresponding client database entry in the Apricot database.
 This processing will be handled by an Operation ID volunteer, as is done in the same-day-service model.
 
-Once the check(s) have been cut for a client, the Operation ID employee monitoring the dashboard changes the client's status to Done indicating
+Once the check(s) have been cut for a client, the Operation ID employee monitoring the dashboard changes the client's status to Done, indicating
 to the client's case manager that processing has completed and checks may be picked up at the Operation ID office. The checks will be released
 to a case manager as redemption of the corresponding Case Manager Voucher.
 
-The process of remote operation described above involves only the case manager and Operation ID personnel. A client works with his/her case manager
+The process of remote operations described above involves only the case manager and Operation ID personnel. A client works with his/her case manager
 to generate a service request and then waits for the checks to be picked up at Operation ID by the case manager. Unlike the same-day-service
 model, the client never appears at Operation ID. This will be especially important as long as the same-day-service operation remains shut down.
 
 The Remote Operation ID process clearly requires more time to complete than the same-day-service model. As a practical matter, a Case Manager Voucher
 will indicate a 30 day period of validity. This is actually a time limit on how long Operation ID is given to respond to the corresponding service request
-once it appears on the OPIDDaily dashboard. The dashboard list will be sorted in chronological order of service request expiration dates. A service request will
-automatically roll off the dashboard once its expiration date has passed.
+once it appears on the service requests dashboard. The dashboard list will be sorted in chronological order of service request expiration dates. A service
+request will automatically roll off the dashboard once its expiration date has passed.
 
 ## Service History
 A Service Ticket lists not only the services a client is requesting but also the services the client has received in prior visits (if any). Listing
@@ -151,8 +151,8 @@ a back office volunteer will need to consult a Quickbooks ledger to determine th
 it may affect the service request by the client. In the same-day-service model, a client may need to be informed the he/she is not eligible for a requested
 service, because they have exhausted their twice-in-a-lifetime eligibility. This is sometimes a difficult conversation, especially if the client has endured
 a long line only to learn they are not eligible for the service they are requesting. In the remote operation model, Operation ID will convey ineligibility through
-the OPIDDaily website to a client's case manager. The case manager will then need to remind the client of the disclaimer about potential service denial that the client was made aware
-of when they signed their Case Manager Voucher.
+the OPIDDaily website to a client's case manager. The case manager will then need to remind the client of the disclaimer about potential service denial that the
+client was made aware of when they signed their Case Manager Voucher.
 
 ## This Document
 OPIDDaily is available as a password protected website to registered users. This document describes the design and implementation of OPIDDaily.

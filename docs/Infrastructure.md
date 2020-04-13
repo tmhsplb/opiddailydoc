@@ -13,12 +13,15 @@ Web.Staging.config to be used upon deployment. This is done in the Settings sect
 has its Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.
 
 ## Visual Studio Project
-The Visual Studio 2019 (Community Edition) project representing application OPIDDaily was developed using an ASP.NET Identity 2.0 sample project
-developed by Syed Shanu as a starting point. The project is described in the
+The Visual Studio 2019 (Community Edition) project representing application OPIDDaily defines a role-based system. It was developed using the ASP.NET
+Identity 2.0 framework. A sample ASP.NET Identity 2.0 project was developed by Syed Shanu and described in the
 [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role).
 
 The sample project uses the Visual Studio MVC5 project template and makes use of Katana OWIN middleware for user authentication. The use of Katana is
 built into the ASP.NET Identity 2.0 provider used by the project template, as is explained in the CodeProject article.
+
+The OPIDaily application was built with information taken from this articles as well as the technique for maintaining 2 data contexts described in  
+[Scott Allen's Pluralsight video](https://app.pluralsight.com/player?author=scott-allen&name=aspdotnet-mvc5-fundamentals-m6-ef6&mode=live&clip=1&course=aspdotnet-mvc5-fundamentals).
 
 On the Properties page of the Visual Studio project, remember to select Local IIS as the server and click the Create Virtual Directory button to set
 
@@ -57,8 +60,14 @@ This query creates the database user NT AUTHORITY\NETWORK SERVICE. The second qu
 
       EXEC sp_addrolemember 'db_owner', 'NT AUTHORITY\NETWORK SERVICE'
 
-This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. These same two queries do not need to be executed
-in the AppHarbor database to prepare it to communicate with IIS. See below for information about the AppHarbor deployment of OPIDDaily.
+This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. Finally, go into the security
+section of database OPIDDaily in SSMS. Expand Users and select the properties for user NT AUTHORITY\NETWORK SERVICE. Select Membership
+from the Select a page section of the dialog box and tick the checkbox for db_owner. Performing this final change will permit user
+NT AUTHORITY\NETWORK SERVICE to create tables in the database. This ability is necessary for the first the OPIDDaily application is
+run to enable it to automatically create the ASP.NET Identity tables in the database.
+
+Creating and configuring user NT AUTHORITY\NETWORK SERVICE does not need to be performed at AppHarbor in order to communicate with IIS.
+See below for information about the AppHarbor deployment of OPIDDaily.
 
 It is also necessary to change the application pool identity of application OPIDDaily running under IIS to NETWORKSERVICE. See the section on
 configuring IIS.
@@ -78,53 +87,78 @@ SSMS v18.0 does not have the capability to generate database diagrams. Previous 
 but it was removed from v18.0. The capability has been added back to newer version of SSMS.
 
 ## Entity Framework Code First
-An application based on Entity Framework Code First may have multiple data contexts referencing a single database, as is the case for application
-OPIDDaily. In application OPIDDaily a data context is reserved for database migrations used by the ASP.NET Identity subsystem.  
+The Visual Studio project OPIDDaily has 2 data contexts called IdentityDB and OpidDailyDB. The technique for establishing a single connection string over
+2 data contexts is described in
+[Scott Allen's Pluralsight video](https://app.pluralsight.com/player?author=scott-allen&name=aspdotnet-mvc5-fundamentals-m6-ef6&mode=live&clip=1&course=aspdotnet-mvc5-fundamentals).
 
-Supporting multiple data contexts was enabled by some manual scaffolding in the codebase. In the case of the OPIDDaily application this scaffolding
+Following the video, supporting 2 data contexts in application OPIDDaily was enabled by some manual scaffolding in the codebase. This scaffolding
 consisted  of creating a project folder called DataContexts with two subfolders: IdentityMigrations and OPIDDailyMigrations. Also, a new folder
 called Entities was added to the OPIDDaily Visual Studio Solution to contain the classes defining the entities used by the solution.
 
-Before the code was run for the first time, the PowerShell command
-
-    PM> Enable-Migrations -ContextTypeName OPIDDaily.DataContexts.IdentityDb -MigrationsDirectory DataContexts\IdentityMigrations
-
-was executed. This created the two files
-
-    DataContexts\IdentityMigrations\Configuration.cs
-    DataContexts\IdentityMigrations\IdentityDB.cs
-
-which initiaized the IdentityDB data context. It is worth taking a look at these two files. In particular, the file IdentityDB.cs was edited to point to
-the application connection string through Config.ConnectionString.
-
-Executing the above PowerShell command allows the ASP.NET Identity system to automatically update the OPIDDailyDB with the ASP.NET Identity tables
-the first time the program is run. Running the program for the first time on the local IIS also automatically created the migration
-
-    DataContexts\IdentityMigrations\201906051504117_InitialCreate.cs
-
-which specifies the code used to create the ASP.NET Identity tables. It is worth taking a look at this file.
-
-The first time the program was run, the Superadmin user, sa, was created in table **AspNetUsers** of the OPIDDaily database. (See the Database Diagram
-section on the Database tab.) User sa was created by method Startup.Configuration (part of Katana middleware) on the toplevel file
-Startup.cs. This file specifies the user sa as the first user in role SuperAdmin (created on the file). It also points to the toplevel file
-Config.cs through the reference Config.SuperadminPassword, where the password of user sa is configured.
-
-This project used as its starting point the [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role)
-It was necessary to move the class ApplicationDbContext from file Models\IdentityModels.cs on the sample project to file DataContexts/IdentityDb.cs
+Create the top level folder DataContexts and create class IdentityDB in this folder, as specified in Scott Allen's video. Note that it was found
+necessary to move the class ApplicationDbContext from file Models\IdentityModels.cs on the video to file DataContexts/IdentityDb.cs
 to make things work.
 
-The PowerShell command
+The class AppStart/IdentityConfig will need to be modified in order for the application to compile. Replace the line
+
+     var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<ApplicationDbContext>()));
+
+by
+
+    var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<IdentityDB>()));
+
+The class AppStart/StartupAuth will also need to be modified. Replace the line
+
+    app.CreatePerOwinContext(ApplicationDbContext.Create);
+
+by the line
+
+     app.CreatePerOwinContext(IdentityDB.Create);
+
+This will invoke the method IdentityDB.Create at the proper time.
+
+Then run the PowerShell command
+
+    PM> Enable-Migrations -ContextTypeName OPIDDaily.DataContexts.IdentityDB -MigrationsDirectory DataContexts\IdentityMigrations
+
+This will create the file
+
+    DataContexts\IdentityMigrations\Configuration.cs
+
+Next in method Configuration on this file set
+
+    AutomaticMigrationsEnabled = true;
+
+to allow the ASP.NET Identity tables to be created when application OPIDDaily is run for the first time. Also add the line
+
+    ContextKey = "OPIDDaily.DataContexts.IdentityDB";
+
+to method Configuration.
+
+Before running the program for the first time, make sure the database OPIDDailyDB has been created in SQL Server and, if running in the
+desktop environment, user NT AUTHORITY\NETWORK SERVICE has been created and configured. See the section SQL Server Express and SSMS above
+for instructions on how to do this.
+
+The CodeProject article (referenced in section Visual Studio Project) gives the Katana middleware code needed to cause the ASP.NET Identity
+tables to be created and the first user to be entered into them. This middleware code is found on the toplevel file Startup.cs. As specified
+on this file the first user is the SuperAdmin user, sa. When application OPIDDaily is run for the first time the ASP.NET Identity tables will
+be created when the middleware is executed. The user sa will then be found in table **AspNetUsesrs**. File Startup.cs is worth studying.
+
+After application OPIDDaily is run for the first time the database will contain not only the ASP.NET Identity table but also an entity
+framework table called _MigrationHistory. Entity Framework uses this table to record migrations. As a result of the creation of the
+ASP.NET Identity tables, a migration with MigrationId 201906051504117_InitialCreate was created in the _MigrationHistory table.
+
+Next, to initialize the OPIDDaily data context, run the PowerShell command
 
     PM> Enable-Migrations -ContextTypeName OPIDDaily.DataContexts.OPIDDailyDB -MigrationsDirectory DataContexts\OPIDDailyMigrations
 
-was executed to initialize the OPIDDaily data context. This created the two files
+This will create the file
 
     DataContexts\OPIDDailyMigrations\Configuration.cs
-    DataContexts\OPIDDailyMigrations\OPIDDailyDB.cs
 
-It is worth studying these two files.
+Next create the class DataContexts\OpidDailyDB as per the video. This class is similar to the previously created DataContexts\IdentityDB.cs.
 
-The first entity added to the OPIDDaily project was the class `Entities\Client.cs`. This entity was connected to the OPIDDDaily data context by the
+The first entity added to the OPIDDaily project was the class Entities\Client. This entity was connected to the OPIDDDaily data context by the
 inclusion of the declaration
 
     public DbSet<Client> Clients { get; set; }
@@ -152,7 +186,7 @@ to two database columns, ReferralDate and AppearanceDate, which are not in the c
 
 was used to remove these columns when it was realized they would not be needed.
 
-The second entity to be added to project OPIDDaily was the class `Entities\Visit.cs`. This entity was connected to the OPIDDaily data context by the
+The second entity to be added to project OPIDDaily was the class Entities\Visit.cs. This entity was connected to the OPIDDaily data context by the
 inclusion of the declaration
 
     public DbSet<Visit> Visits { get; set; }
@@ -163,7 +197,7 @@ Since table **Visits** was intended to be related to table **Clients** in the OP
 
     public ICollection<Visit> Visits { get; set; }
 
-was added to class `Entities\Client.cs`. Entity Framework Code First automatically detected this when the "History" migration (described next)
+was added to class Entities\Client.cs. Entity Framework Code First automatically detected this when the "History" migration (described next)
 was created.
 
 Running the PowerShell command
@@ -194,13 +228,16 @@ preceding the migration ExpressClient was the migration PXXA. Therefore, to get 
 
     update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:PXXA
 
-The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor. executed at AppHarbor, the script will update the _MigrationHistory as well. If the script involves adding a table, then running it before the code is updated
+The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor. executed at
+AppHarbor, the script will update the _MigrationHistory as well. If the script involves adding a table, then running it before the code is updated
 at AppHarbor will ensure that the table is ready for use when the code that references it is deployed.
 
 ## Configuring IIS
-Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the deployment environment at AppHarbor as closely as possible.
+Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the
+deployment environment at AppHarbor as closely as possible.
 
-The localhost application server, Internet Information Services (IIS), was not pre-installed on the localhost; however, it is part of the operating system that can easily be activated. To activate IIS, go to the Programs section of the Control Panel and turn on the IIS feature:
+The localhost application server, Internet Information Services (IIS), was not pre-installed on the localhost; however, it is part of the operating system that
+can easily be activated. To activate IIS, go to the Programs section of the Control Panel and turn on the IIS feature:
 
     Programs > Programs and Features > Turn Windows features on or off > Internet Information Services
 
@@ -234,7 +271,7 @@ IIS display.
 The dialog box contains a section labeled Process Model which contains an entry labeled Identity. Selecting the Identity entry adds an ellipsis next to
 the bold ApplicationPoolIdentity. Selecting the ellipsis brings up a dialog box with the pre-selected radio button Built-in account. Select
 NetworkService from the dropdown menu associated with this radio button. After approving this selection, the Identity column of the application pool
-.NET v4.5 will show NetworkService. See the section on SQL Server Express for how to establish user NetworkService.
+.NET v4.5 will show NetworkService. See the section on SQL Server and SSMS for how to establish user NetworkService.
 
 
 ## Git for Windows
@@ -462,7 +499,7 @@ After the <configSections> section add the definition of the AdoNetAppender:
    <log4net debug="true">
       <appender name="AdoNetAppender" type="log4net.Appender.AdoNetAppender">
         <!--Change to 10 or MORE. This is critical, after 10 messages then log to database-->
-        <bufferSize value="10" />
+        <bufferSize value="1" />
         <connectionType value="System.Data.SqlClient.SqlConnection, System.Data, Version=1.0.3300.0,
               Culture=neutral, PublicKeyToken=b77a5c561934e089" />
         <connectionStringName value="OpidDailyConnectionString" />
@@ -521,7 +558,14 @@ After the <configSections> section add the definition of the AdoNetAppender:
       </root>
     </log4net>
 
-log4net must be initialized on file Global.asax.cs by including the configuration statement
+Notice that the configured value of the bufferSize is 1, despite the comment above the configuration to use a value of 10 or more. The value
+of 1 is chosen so that buffering of log statements will not occur; each log statement will be written to the log file at the time it is
+generated. This is important because OPIDDaily does not include many log statements. If the buffer size were set to 10 or more, then log
+statements would not appear in the log file until 10 log statements had accumulated. Setting the bufferSize to 1 is convenient for Log.Debug
+statements which may be needed to trace the behavior of the website at AppHarbor where the Visual Studio debugger is not available. It is
+also at times convenient when debugging in the desktop environment where the Visual Studio debugger is available.
+
+Finally, log4net must be initialized on file Global.asax.cs by including the configuration statement
 
    log4net.Config.XmlConfigurator.Configure();
 

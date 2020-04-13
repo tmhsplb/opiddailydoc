@@ -92,16 +92,18 @@
             <li><a href="#the-sharedcontroller">The SharedController</a></li>
             <li><a href="#the-userscontroller">The UsersController</a></li>
             <li><a href="#jqgrid">jqGrid</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#styling-a-jqgrid-using-jquery-ui">Styling a jqGrid using jquery-ui</a></li>
             <li><a href="#jquery-datatables">jquery Datatables</a></li>
             <li><a href="#nowserving">NowServing</a></li>
             <li><a href="#households">Households</a></li>
-            <li><a href="#the-agencyid-data-field-in-table-aspnetusers">The AgencyId Data Field in table AspNetUsers</a></li>
+            <li><a href="#the-agencyid-data-field-in-table-aspnetusers">The AgencyId data field in table AspNetUsers</a></li>
             <li><a href="#date-management">Date management</a></li>
-            <li><a href="#the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in Table Clients</a></li>
+            <li><a href="#the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in table Clients</a></li>
             <li><a href="#sessionhelper">SessionHelper</a></li>
-            <li><a href="#express-clients-and-existing-clients">Express Clients and Existing Clients</a></li>
             <li><a href="#service-tickets">Service Tickets</a></li>
             <li><a href="#signalr">SignalR</a></li>
+            <li><a href="#exceldatareader">ExcelDataReader</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -118,10 +120,10 @@ specified role cannot visit any pages outside of those allowed to users in that 
 <p>Because of its use of SignalR, application OPIDDaily will always require a server side component. See the section on
 SignalR on this tab for a discussion of this.</p>
 <h2 id="users">Users</h2>
-<p>OPIDDaily is a role-based system. Each registered user will be assigned a user role by the OPIDDaily administrator. The role that a user is assigned
-will determine the OPIDDaily features available to the user. A user's assigned role will depend upon whether the user volunteers at the front desk,
-is a volunteer interviewer or is a back office volunteer. In addition, there will be a manager's role to be assigned to Operation ID managers who
-want to watch the client processing flow during a day of operation.</p>
+<p>OPIDDaily is a role-based system. Each registered user will be assigned a user role by the OPIDDaily administrator.
+The role that a user is assigned will determine the OPIDDaily features available to the user. A user's assigned role will depend upon whether
+the user volunteers at the front desk, is a volunteer interviewer or is a back office volunteer. In addition, there will be a manager's role
+to be assigned to Operation ID managers who want to watch the client processing flow during a day of operation.</p>
 <p>The OPIDDaily administrator will be in the role of Superadmin and will have access to features necessary for the maintenance of application OPIDDaily.
 There will be only one Superadmin account, but the credentials for this account will be available to maintainers of the application.</p>
 <h2 id="the-superadmin-user">The Superadmin User</h2>
@@ -157,6 +159,20 @@ the controller. For example, the FrontDeskController is protected by the annotat
 <pre><code>[Authorize(Roles = "FrontDesk")]
 </code></pre>
 <p>Access is then restricted by the functionality of ASP.NET Identity to authenticated users in role FrontDesk.</p>
+<p>A quirk of role-based authorization of controllers occurs when a new user is registered in a role. The AccountController register method redirects
+a newly registered user to the Index method of the UsersController. This method then in turn attempts to redirect the user to the Home method of
+the appropriate controller, based on the newly registered users role. For example, a newly registered user in the role BackOffice will be redirected
+to the Home method of the BackOfficeController. Here lies the rub. The BackOfficeController is decorated with the attribute</p>
+<pre><code>[Authorize(Roles = "BackOffice")]
+</code></pre>
+<p>but the newly registered user, even though he/she is in role BackOffice as determined by the UsersController is blocked by the attribute! The
+attribute causes the user to be redirected to the Login method of the AccountController. This may be by design and logging in with the same
+credentials just supplied in the registration process works. But it would seem that the act of registering should cause the new user to be logged in
+upon registration. When a new session is started, a user registered in role BackOffice is not blocked by the Authorize attribute even though the login
+workflow is basically the same as the registration workflow. Go figure!</p>
+<p>In any event, registration of new users for application OPIDDaily has been handled by the SuperAdmin user who therefore knows the password of
+each user. But this is not a problem because users do not have access to private data. User accounts are simply established to separate users from
+each other and to restrict their access to portions of the website.  </p>
 <h2 id="the-sharedcontroller">The SharedController</h2>
 <p>Each role controller derives from SharedController. The SharedController implements the shared editor functionality available to the different roles.
 Deriving role controllers from a shared controller is an extremely useful technique for building a role-based editor.</p>
@@ -168,15 +184,74 @@ redirected to from this entry point.</p>
 <p>The entire implementation of application OPIDDaily is structured around instances of jqGrid appearing in MVC Views. Each jqGrid is initially populated
 by a call to an MVC action made through the url property of the grid. For example, the clientsGrid on view FrontDesk/Clients.cshtml is initially
 populated by the call</p>
-<pre><code>"@Url.Action("GetClients", "FrontDesk)"
+<pre><code>"@Url.Action("GetClients", "FrontDesk")"
 </code></pre>
 <p>which is the value of the url argument to grid clientsGrid. (Method GetClients is found on the SharedController.)</p>
-<p>Each instance of a jqGride defines a <em>pager</em>, which defines the CRUD operations supported by the grid. Each CRUD operation is
+<p>Each instance of a jqGrid defines a <em>pager</em>, which defines the CRUD operations supported by the grid. Each CRUD operation is
 implemented by an MVC action of the role controller associated with the grid.</p>
-<p>Initial population of a grid, grid pagination, grid searching and grid CRUD operations are all supported by server side code.</p>
 <p>There is a collection of <a href="http://trirand.com/blog/jqgrid/jqgrid.html">jqGrid Demos</a> that was very helpful during the development of OPIDDaily.</p>
+<h2 id="dashboard">Dashboard</h2>
+<p>The jqGrid used to represent the dashboard of service requests supports filtered server-side searching. Performing filtered searches on
+the server-side is necessary in order to preserve pagination, which will be needed if there are more than 25 service requests active
+at any given time. The dashboard is sorted by ascending order of service request expiry. A service request rolls off the dashboard
+once its expiry has passed.</p>
+<p>The dashboard is made searchable via the configuration:</p>
+<pre><code>jQuery("#dashboardGrid").jqGrid('filterToolbar', { searchOperators: true });
+</code></pre>
+<p>Each column which supports filtered searching (example Agency Name) includes the parameter</p>
+<pre><code>search: true
+</code></pre>
+<p>in its column declaration. Filtered searching is implemented by the method SharedController/GetDashboard.</p>
+<p>The parameter sps of type SearchParameters is populated by the POST that calls method GetDashboard. The
+POST will include the search string as the value of the jqGrid column name, for example AgencyName or LastName.
+Method GetDashboard calls Clients.GetDashboardClients which in turn calls GetFilteredDashboardClients in case
+a filtered search has been requested. This is determined by the boolean variable _search. The value of _search
+will be true if a filtered search has been requested and false otherwise. The value of _search is false on the
+initial call to GetDashboard and on each call to refresh the dashboard.</p>
+<p>The parameter setting</p>
+<pre><code>loadonce : false
+</code></pre>
+<p>as part of the jqGrid declaration enables the server-side filtering.</p>
+<h2 id="styling-a-jqgrid-using-jquery-ui">Styling a jqGrid using jquery-ui</h2>
+<p>The default jquery ui theme that comes with a Visual Studio 2019 project is referenced by
+adding the lines</p>
+<p>"~/Content/themes/base/jquery-ui.css",
+   "~/Content/themes/base/jquery.ui.theme.css"</p>
+<p>to the Content/css bundle on AppStart/BundleConfig.cs and adding the link</p>
+<pre><code>&lt;link href="@Url.Content("~/Content/themes/base/jquery.ui.all.css")" rel="stylesheet" /&gt;
+</code></pre>
+<p>to each file that contains a jqGrid.</p>
+<p>The file jquery.ui.all.css contains styling for all the jquery ui components. But this is not
+necessary for the OPIDDaily application, because the only jquery component contained on any
+page is the jqGrid component. Instead of linking in jquery.ui.all.css by the above link, replace
+this link by the link</p>
+<pre><code>&lt;link href="@Url.Content("~/Content/jquery.jqGrid/ui.jqgrid.css")" rel="stylesheet" /&gt;
+</code></pre>
+<p>on each page that uses a jqGrid. This links in file ui.jqgrid.css that comes with the jqGrid
+download. This file has a problem with correctly displaying the caption of a jqGrid. A new
+version was downloaded from the <a href="http://www.trirand.com/blog/jqgrid/themes/ui.jqgrid.css">jqDemos page</a>
+and copying the displayed stylesheet to the file copied.ui.jqgrid.css. When this is linked
+in instead of the original ui.jqgrid.css the caption is displayed correctly. However, it still
+uses the default theme referenced above.</p>
+<p>To change the theme, go to the Download tab on jqueryui.com. Uncheck all components, since
+only the jqGrid needs to be styled and this is done by ui.jqgrid.css which came with the
+jqGrid download. At the bottom of the page, select a theme (the jqDemos page uses the Redmond
+theme) and click the Download button to get a .zip file.</p>
+<p>The .zip file includes files named jquery-ui.css and jquery-ui.theme.css. Rename them according
+to the selected theme (example: redmond-jquery-ui.css and redmond-jquery-ui.theme.css) and
+copy them to the project. The .zip file also contains an images folder which contains images
+referenced by the theme. Rename the existing Content/themes/base/images folder to be old-images
+and create a new images folder. Copy the images from the .zip file to the new images folder.  </p>
+<p>Finally, on file AppStart/BundleConfig.cs, replace the lines providing the default theme (see
+above) by the lines</p>
+<pre><code> "~/Content/themes/base/redmond-jquery-ui.css",
+ "~/Content/themes/base/redmond-jquery-ui.theme.css"
+</code></pre>
+<p>This will cause the styling on a page containing a jqGrid to be done according to the Redmond
+theme.</p>
 <h2 id="jquery-datatables">jquery Datatables</h2>
-<p>The Research Table is implemented as a server-side datatable. It is dependent on 2 packages from NuGet:</p>
+<p>The Research Table is implemented as a server-side datatable. It is dependent on 2 packages downloaded using the NuGet
+package manager:</p>
 <pre><code>jquery.datatables  v1.10.15
 datatables.mvc5    v0.1.0
 </code></pre>
@@ -200,12 +275,12 @@ selected row. The function posts to the server side method NowServing of the Fro
 variable in the post.</p>
 <h2 id="households">Households</h2>
 <p>Table <strong>Clients</strong> is a list of clients and their dependents. Most clients represent only themselves but some have dependents. A client together with any
-dependents he or she may have is referred to as a <strong>household</strong>. The head of a household is a top level member of the table <strong>Clients</strong>. The HH field of
+dependents he or she may have is referred to as a <em>household</em>. The head of a household is a top level member of the table <strong>Clients</strong>. The HH field of
 each top level client C is set to 0, that is C.HH = 0. If client D is a dependent of client C then the HH field of client D points back to client C through
 the setting D.HH = C.Id. In fact, dependent D belongs to a subgrid of the jqGrid used to
-render the <strong>Clients</strong> table. Dependent D is added to the subgrid whose parent entry is the entry for client C. If client C is has dependents, then C.HeadOfHousehold
-will be set to true and the row rendering client C in the jqGrid will indicate that client C is the head of a household.</p>
-<h2 id="the-agencyid-data-field-in-table-aspnetusers">The AgencyId Data Field in table <strong>AspNetUsers</strong></h2>
+render the <strong>Clients</strong> table. Dependent D is added to the subgrid whose parent entry is the entry for client C. If client C is has dependents, then
+C.HeadOfHousehold will be set to true and the row rendering client C in the jqGrid will indicate that client C is the head of a household.</p>
+<h2 id="the-agencyid-data-field-in-table-aspnetusers">The AgencyId data field in table <strong>AspNetUsers</strong></h2>
 <p>Application OPIDDaily is used by users at Operation ID and by users representing agencies that refer clients to
 Operation ID. The AgencyId field in table <strong>AspNetUsrs</strong> will be set to 0 for Operation ID users (for example
 the TicketMaster user) and will be set to the AgencyId of their referring agency for other users. The AgencyId
@@ -226,65 +301,62 @@ This can be found on file DAL/Visits.cs.</p>
 <p>When a jqGrid row containing a date is edited the date posted to the server is the midnight time, not the offset to noon time.
 When the row is retrieved in a ClientViewModel, the time will again be offset by 12 hour to noon and will thus display as intended
 in the jqGrid.</p>
-<h2 id="the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in Table <strong>Clients</strong></h2>
-<p>When the TicketMaster adds a new client to the <strong>Clients* table the date the client is entered is recorded in the
+<h2 id="the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in table <strong>Clients</strong></h2>
+<p>When the TicketMaster adds a new client to the <strong>Clients* table, the date the client is entered is recorded in the
 ServiceDate data field of table </strong>Clients<strong>. The same date is recorded in the Expiry data field. When a Case Manager
-user enters a new client into the </strong>Clients<strong> table, the ServiceDate data field is set to the date the client is
+user enters a new client into the </strong>Clients** table, the ServiceDate data field is set to the date the client is
 entered, but the Expiry data field is set at least 30 days into the future. This expiry date will be printed
 on the Case Manager Voucher given to a client by his/her Case Manager. Application OPIDDaily will preload the
-</strong>Clients** table seen by the TicketMaster with any clients whose Expiry date has not yet past. This will allow
-a client entered by a Case Manager to be given priority service on the day he/she appears at Operation ID. It is
-the client's responsibility to appear at Operation ID on or before the expiry date printed on his/her voucher.  </p>
+Dashboard table seen by the TicketMaster with any clients whose Expiry date has not yet past. This will allow
+a client with a Case Manager Voucher to be tracked on the day he/she appears at Operation ID. It is
+the client's responsibility to appear at Operation ID on or before the expiry date printed on their voucher.  </p>
 <h2 id="sessionhelper">SessionHelper</h2>
-<p>The SessionHelper class found on fie DAL/SessionHelper.cs is the key method for managing state in application OPIDDaily. This class is used to store key
-value pairs in the sesssion context private to each authenticated user.</p>
+<p>The SessionHelper class found on fie DAL/SessionHelper.cs is the key method for managing state in application OPIDDaily. This class is
+used to store key value pairs in the sesssion context private to each authenticated user.</p>
 <p>Managing the value of NowServing is a key use of the SessionHelper. Instead of having methods called GetNowServing and SetNowServing, the
 SharedController uses polymorphism to define two methods called NowServing with different signatures. The NowServing method with zero arguments invokes
-method SessionHelper.Get and the NowServing method with optional argumnt nowServing invokes method SessionHelper.Set. These two NowServing methods are
+method SessionHelper.Get and the NowServing method with optional argument nowServing invokes method SessionHelper.Set. These two NowServing methods are
 invoked by many methods on SharedController to implement editing functionality private to an authenticated user.</p>
-<h2 id="express-clients-and-existing-clients">Express Clients and Existing Clients</h2>
-<p>A first time client to Operation ID is referred to as an Express Client. Determining whether a given client is an Express Client is done by consulting
-the Apricot database to determine whether the client has a <em>visit history</em>. A visit history is a list of services previously performed for a client.
-If a client is determined to be an Express Client, then a user in the role FrontDesk (a FrontDesk admin) must use the OPIDDaily interface to edit the
-client and mark him/her as an Express Client.</p>
-<p>If consulting the Apricot database indicates that a client has a previous service history at Operation ID, then a FrontDesk admin must use the OPIDDaily
-interface to copy the history of previous visits to the <strong>Visits</strong> table. This table is related to the <strong>Clients</strong> table by a foreign key relationship.
-See the section Entity Framework Code First on the Infrastructure tab for a discussion of this foreign key relationship.</p>
-<p>Method AddClient of the SharedController receives the id returned by method Clients.AddVisit. This id will be the id of the client inserted into
-the <strong>Clients</strong> table. See <a href="https://stackoverflow.com/questions/5212751/how-can-i-get-id-of-inserted-entity-in-entity-framework">this StackOverflow article</a> for an explantion of the side effect of record insertion relied upon for this.
-The client with this id will become the NowServing client. (See the section NowServing.)</p>
-<p>The foreign key relationship existing between tables <strong>Clients</strong> and <strong>Visits</strong> is not supported by a cascading delete; deleting a client
-from the <strong>Clients</strong> table does not by default perform a cascading delete of any related records in the <strong>Visits</strong> table. The cascading delete must be
-performed manually. To see how this is done, see method RemoveClients in the SuperadminController.</p>
-<p>A client not marked as an Express Client is referred to as an Existing Client. A FrontDesk admin is responsible for using the interface to distinguish
-between these two types of client. This has the advantage that a user in the role of Interviewer (an Interviewer admin) need not know the difference.
-An Interviewer admin prepares Service Tickets (see next section) which automatically include the service history which has been recorded by a FrontDesk
-admin for Existing Clients.</p>
 <h2 id="service-tickets">Service Tickets</h2>
 <p>A primary goal of application OPIDDaily is the production of <em>Service Tickets</em>. A service ticket is a single piece of paper that shows the services
-requested by a given client together with the documents the client is supplying in support of his/her service request. In addition a service ticket
+requested by a given client together with the documents the client is supplying in support of his/her service request. In addition, a service ticket
 provides a history of service requests from previous visits by the client, if any.</p>
-<p>Service Tickets are produced by an Interviewer Admin. The interviewing process begins by determining the service needs of a client together with
-documents the client is supplying in support of those needs. An Interviewer admin will use the OPIDDaily interface to capture this information. A
-client's history of previous visits to Operation ID will have already been recorded by a FrontDesk admin by consulting the Apricot database.</p>
-<p>After the Service Ticket for a client has been produced, an Interviewer admin will assist the client in filling out paperwork in support of service
-sought. It is suggested that a client's Service Ticket be forwarded to a BackOffice admin before work on a client's paperwork begins. By passing
-the Service Ticket to a BackOffice admin, a client's service voucher(s) can be cut and recorded in Apricot while the client is busy with paperwork.
+<p>Service Tickets are produced by the TicketMaster at the front desk for same-day-service clients. In practice, the TicketMaster only creates a Service
+Ticket for a client with a history of previous visits. This Service Ticket is attached to the referral letter for a same-day-service client and the
+client is picked up by an interviewer. The Service Ticket contains a section of supporting documents which an interviewer can use as a worksheet
+while interviewing a client. The supporting documents section is not filled out by the front desk admin. The interviewer will assist the client in
+filling out paperwork in support of service(s) sought.</p>
+<p>It has been suggested that a client's Service Ticket be forwarded to a back office admin before work on a client's paperwork begins. By passing
+the Service Ticket to a back office admin, a client's service voucher(s) can be cut and recorded in Apricot while the client is busy with paperwork.
 In effect a client's <strong>BackOffice</strong> stage can proceed in parallel with his/her <strong>Interviewing</strong> stage once the Service Ticket has been produced.</p>
+<p>A Service Ticket is specified by a Case Manager before production of a Case Manager Voucher. See the Remote Operation ID section of the Background tab
+for information about this. A Service Ticket for Back Office use is printed by an Operation ID employee monitoring the remote service requests that
+appear on the Back Office service request dashboard display. See the Remote Operation ID section of the Background tab for information about this.</p>
 <h2 id="signalr">SignalR</h2>
-<p>Application OIDDaily uses version 2.4.1 of the JavaScript SignalR package installed via NuGet. SignalR is a push-technology used to inform authenticated
-users about the progress of an Operation ID client as he/she passes through the Operation ID pipeline.</p>
+<p>Application OPIDDaily uses version 2.4.1 of the JavaScript SignalR package installed using the NuGet package manager. SignalR is a push-technology used
+to inform authenticated users about the progress of an Operation ID client as the client passes through the Operation ID pipeline.</p>
 <p>The SignalR connection hub is defined on file DAL/DailyHub.cs. Invoking a method of DailyHub in the server side code causes a push-notification to
-go out to all clients registered to the hub. For example, when a FrontDesk admin adds a new client to the jqGrid managed by the FrontDeskController,
-the method SharedController.AddClient will invoke DailyHub.Refresh. A call to the
-line</p>
+go out to all clients registered to the hub. For example, when a front desk admin adds a new client to the jqGrid managed by the FrontDeskController,
+the method SharedController.AddClient will invoke method DailyHub.Refresh. This method executes</p>
 <pre><code>hubContext.Clients.All.refreshPage();
 </code></pre>
-<p>will send a push notification to all registered clients of the hub. Those clients listening for this notification, for example the view
+<p>which sends a push notification to all registered clients of the hub. Clients listening for this notification, for example the view
 Interviewer/Clients.cshtml, will act upon the notification. In this case, the action will be to refresh the jqGrid of clients displayed by the
-grid. In this way this grid is kept in synch with the grid to which the client was added by the FrontDesk admin.</p>
+grid. In this way this grid is kept in synch with the grid to which the client was added by the front desk admin.</p>
+<p>SignalR is also used as the means to update a progress bar display used when processing external Excel files containing check data.
+The code for doing so is found in this excellent <a href="https://www.codeproject.com/articles/1124691/signalr-progress-bar-simple-example-sending-live-d">Code Project article</a>. Application OPIDDaily makes use of this code. On the client side, the progress bar is included as a partial view by the statement</p>
+<pre><code> @Html.Partial("_ModalProgressBar")
+</code></pre>
+<p>See for example file ~/Views/BackOffice/Merge.cshtml. On the server-side the progress bar is updated by executing a call like</p>
+<pre><code> DailyHub.SendProgress("Merge in progress...", i, checkCount);
+</code></pre>
+<p>found on file DAL/Merger.cs.</p>
 <p>SignalR is also used by both the special users <strong>Client1</strong> and <strong>Client2</strong> to refresh the tablet computer displays used by these users. (See the section
-Managing Users on the Database tab.)</p></div>
+Managing Users on the Database tab.)</p>
+<h2 id="exceldatareader">ExcelDataReader</h2>
+<p>Application OPIDDaily uses version 3.60 of the ExcelDataReader package downloaded using the NuGet package manager. The package is used to read
+externally generated Excel data files containing check data that is imported into OPIDDaily. The code that makes use of the package is found in
+files Utils/ExcelData.cs and Utils/MyExcelDataReader.cs</p></div>
         </div>
 
         <footer class="col-md-12">
