@@ -6,4 +6,5 @@ nav:
  - Infrastructure: 'Infrastructure.md'
  - Database: 'Database.md'
  - Implementation: 'Implementation.md'
+ - Checks: 'Checks.md'
  

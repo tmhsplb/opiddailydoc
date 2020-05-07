@@ -58,6 +58,9 @@
                             <li class="active">
                                 <a href="./">Implementation</a>
                             </li>
+                            <li >
+                                <a href="../Checks/">Checks</a>
+                            </li>
                         </ul>
 
                     <ul class="nav navbar-nav navbar-right">
@@ -71,8 +74,8 @@
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
-                            <li class="disabled">
-                                <a rel="prev" >
+                            <li >
+                                <a rel="prev" href="../Checks/">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -86,7 +89,7 @@
     <ul class="nav bs-sidenav">
         <li class="main active"><a href="#implementation">Implementation</a></li>
             <li><a href="#users">Users</a></li>
-            <li><a href="#the-superadmin-user">The Superadmin User</a></li>
+            <li><a href="#the-superadmin-user">The SuperAdmin User</a></li>
             <li><a href="#mvc-routing">MVC Routing</a></li>
             <li><a href="#role-controllers">Role Controllers</a></li>
             <li><a href="#the-sharedcontroller">The SharedController</a></li>
@@ -97,8 +100,9 @@
             <li><a href="#jquery-datatables">jquery Datatables</a></li>
             <li><a href="#nowserving">NowServing</a></li>
             <li><a href="#households">Households</a></li>
+            <li><a href="#messaging-and-color-coding">Messaging and Color Coding</a></li>
             <li><a href="#the-agencyid-data-field-in-table-aspnetusers">The AgencyId data field in table AspNetUsers</a></li>
-            <li><a href="#date-management">Date management</a></li>
+            <li><a href="#date-management">Date Management</a></li>
             <li><a href="#the-servicedate-and-expiry-data-fields-in-table-clients">The ServiceDate and Expiry data fields in table Clients</a></li>
             <li><a href="#sessionhelper">SessionHelper</a></li>
             <li><a href="#service-tickets">Service Tickets</a></li>
@@ -126,14 +130,15 @@ the user volunteers at the front desk, is a volunteer interviewer or is a back o
 to be assigned to Operation ID managers who want to watch the client processing flow during a day of operation.</p>
 <p>The OPIDDaily administrator will be in the role of Superadmin and will have access to features necessary for the maintenance of application OPIDDaily.
 There will be only one Superadmin account, but the credentials for this account will be available to maintainers of the application.</p>
-<h2 id="the-superadmin-user">The Superadmin User</h2>
-<p>OPIDDaily defines a pre-registered Superadmin user who has privileges to</p>
+<h2 id="the-superadmin-user">The SuperAdmin User</h2>
+<p>OPIDDaily defines a pre-registered SuperAdmin user who has privileges to</p>
 <ul>
 <li>create new roles</li>
 <li>invite new users to register in a pre-determined role</li>
 <li>add new agencies</li>
 </ul>
-<p>The credentials for the Superadmin user are configured on file Startup.cs. There is only a single user with role of Superadmin.</p>
+<p>The credentials for the SuperAdmin user are configured on file Startup.cs. File Startup.cs is where the Superadmin role is created. There is only a
+single user, the SuperAdmin, with role of Superadmin.</p>
 <h2 id="mvc-routing">MVC Routing</h2>
 <p>Application OPIDDaily uses only the default routing rule supplied by the Visual Studio MVC 5 template. This default routing rule is found in
 <code>.../App_Start/RouteConfig.cs</code>.</p>
@@ -149,7 +154,8 @@ There will be only one Superadmin account, but the credentials for this account 
 implement shared functionality. The role controllers manage the views of application OPIDDaily. The implementation of each role controller
 defines methods that are accessible through the menubar defined on the layout file for the role. For example, the FrontDeskController - which implements
 the FrontDesk role - contains methods ExpressClient and ExistingClient (found on the SharedController) invoked from the menubar defined on file</p>
-<p>~/Shared/_FrontDesk.cshtml.</p>
+<pre><code>~/Shared/_FrontDesk.cshtml.
+</code></pre>
 <p>This is the layout file for the FrontDesk role. Each view returned by the FrontDeskController includes this layout file, thereby ensuring that a
 user in the role of FrontDesk will only invoke methods defined by the FrontDeskController.</p>
 <p>Each other role controllers is implemented the same way: each has a defined layout file that is included in each view returned by the controller.
@@ -186,13 +192,14 @@ by a call to an MVC action made through the url property of the grid. For exampl
 populated by the call</p>
 <pre><code>"@Url.Action("GetClients", "FrontDesk")"
 </code></pre>
-<p>which is the value of the url argument to grid clientsGrid. (Method GetClients is found on the SharedController.)</p>
+<p>which is the value of the url argument to grid clientsGrid. (Method GetClients is found on the SharedController.) The clientsGrid is updated by
+SingalR without requiring a page refresh! This enhances the interactivity of the OPIDDaily application.</p>
 <p>Each instance of a jqGrid defines a <em>pager</em>, which defines the CRUD operations supported by the grid. Each CRUD operation is
 implemented by an MVC action of the role controller associated with the grid.</p>
 <p>There is a collection of <a href="http://trirand.com/blog/jqgrid/jqgrid.html">jqGrid Demos</a> that was very helpful during the development of OPIDDaily.</p>
 <h2 id="dashboard">Dashboard</h2>
-<p>The jqGrid used to represent the dashboard of service requests supports filtered server-side searching. Performing filtered searches on
-the server-side is necessary in order to preserve pagination, which will be needed if there are more than 25 service requests active
+<p>The jqGrid used to represent the dashboard of service requests supports filtered server side searching. Performing filtered searches on
+the server side is necessary in order to preserve pagination, which will be needed if there are more than 25 service requests active
 at any given time. The dashboard is sorted by ascending order of service request expiry. A service request rolls off the dashboard
 once its expiry has passed.</p>
 <p>The dashboard is made searchable via the configuration:</p>
@@ -211,7 +218,7 @@ initial call to GetDashboard and on each call to refresh the dashboard.</p>
 <p>The parameter setting</p>
 <pre><code>loadonce : false
 </code></pre>
-<p>as part of the jqGrid declaration enables the server-side filtering.</p>
+<p>as part of the jqGrid declaration enables the server side filtering.</p>
 <h2 id="styling-a-jqgrid-using-jquery-ui">Styling a jqGrid using jquery-ui</h2>
 <p>The default jquery ui theme that comes with a Visual Studio 2019 project is referenced by
 adding the lines</p>
@@ -250,7 +257,7 @@ above) by the lines</p>
 <p>This will cause the styling on a page containing a jqGrid to be done according to the Redmond
 theme.</p>
 <h2 id="jquery-datatables">jquery Datatables</h2>
-<p>The Research Table is implemented as a server-side datatable. It is dependent on 2 packages downloaded using the NuGet
+<p>The Research Table is implemented as a server side datatable. It is dependent on 2 packages downloaded using the NuGet
 package manager:</p>
 <pre><code>jquery.datatables  v1.10.15
 datatables.mvc5    v0.1.0
@@ -280,6 +287,25 @@ each top level client C is set to 0, that is C.HH = 0. If client D is a dependen
 the setting D.HH = C.Id. In fact, dependent D belongs to a subgrid of the jqGrid used to
 render the <strong>Clients</strong> table. Dependent D is added to the subgrid whose parent entry is the entry for client C. If client C is has dependents, then
 C.HeadOfHousehold will be set to true and the row rendering client C in the jqGrid will indicate that client C is the head of a household.</p>
+<h2 id="messaging-and-color-coding">Messaging and Color Coding</h2>
+<p>In the same-day-service model of Operation ID, clients would occasionally return checks that had been issued to them. A check was generally returned for
+one of two reasons: either the check had expierd or it was issued for the wrong amount. Either of these reasons for needing to return a check may occur
+under the remote operations model of Operation ID. To support this a primitive messaging system has been developed to allow the Back Office at Operation
+ID to communicated with a case manager via in application text messages.</p>
+<p>If a check visible in a client's check history needs to be returned, the client's case manager may initiate a text message exchange with the Back office
+by expandng the plus sign (+) next to the check to open up a message subgrid. Clicking the add button (+) on this subgrid will allow the case manager to
+create a message to send to the Back Office. When the message is saved, it will appear in red in the subgrid and the client's row will appear in red
+in the clients grid. The red row in the case manager's grid indicates that he/she is waiting for a reply. The green row in the Back Office dashboard
+indicates that a message has been received.</p>
+<p>When the Back Office highlights a client's green row on the dashboard and then selects Service Request from the menubar this will cause the client's check
+history  to appear. A check on this history that is highlighted in green indicates that it has a message waiting. To see the message, the Back Office will
+expand the plus sign (+) to open up a subgrid of messages. This will expose a message sent by a case manager.</p>
+<p>The Back Office may reply to the message by clicking the add button (+) on the subgrid. The entered message will appear in red in the
+subgrid upon saving and the client's row in the dashboard will be highlighted in red. This signifies that the Back Office has replied to the
+message sent by the case manager and is now waiting for a reply, if any is needed.</p>
+<p>There is one additional form of messaging available only to the Back Office. This messaging causes a client's row to turn blue on both the Back Office
+dashboard and a case manager's clients grid when the stage of a client turns to either CheckedIn of BackOffice. This let's the case manager know that
+action is being taken at Operation ID.</p>
 <h2 id="the-agencyid-data-field-in-table-aspnetusers">The AgencyId data field in table <strong>AspNetUsers</strong></h2>
 <p>Application OPIDDaily is used by users at Operation ID and by users representing agencies that refer clients to
 Operation ID. The AgencyId field in table <strong>AspNetUsrs</strong> will be set to 0 for Operation ID users (for example
@@ -289,7 +315,7 @@ table at Operation ID on a day of operation will be set to 0. The AgencyId of a 
 a referring agency will be set to the AgencyId of the referring agency. Clients are tagged in this way to allow
 Operation ID users to see all clients and to allow a users from a referring agency to see only the clients referred
 by that agency.</p>
-<h2 id="date-management">Date management</h2>
+<h2 id="date-management">Date Management</h2>
 <p>Dates are treated differently at AppHarbor from the way they are treated on the desktop. In both environments, a date is
 stored as the midnight hour. For example, March 26, 2020 is stored as 2020-03-26:00:00:00:000 in the desktop database as
 well as in the AppHarbor database. But if this date is stored in a ClientViewModel object and reported as the value of a jqGrid
@@ -333,21 +359,21 @@ In effect a client's <strong>BackOffice</strong> stage can proceed in parallel w
 for information about this. A Service Ticket for Back Office use is printed by an Operation ID employee monitoring the remote service requests that
 appear on the Back Office service request dashboard display. See the Remote Operation ID section of the Background tab for information about this.</p>
 <h2 id="signalr">SignalR</h2>
-<p>Application OPIDDaily uses version 2.4.1 of the JavaScript SignalR package installed using the NuGet package manager. SignalR is a push-technology used
-to inform authenticated users about the progress of an Operation ID client as the client passes through the Operation ID pipeline.</p>
+<p>Application OPIDDaily uses version 2.4.1 of Microsoft's SignalR framework for real-time communications. SignalR is installed using the NuGet package
+manager. SignalR is a push-technology used by OPIDDaily to update displays without requiring a page refresh.</p>
 <p>The SignalR connection hub is defined on file DAL/DailyHub.cs. Invoking a method of DailyHub in the server side code causes a push-notification to
-go out to all clients registered to the hub. For example, when a front desk admin adds a new client to the jqGrid managed by the FrontDeskController,
-the method SharedController.AddClient will invoke method DailyHub.Refresh. This method executes</p>
+go out to all clients registered to the hub. For example, when a front desk admin adds a new client to the jqGrid managed by the FrontDeskController
+(view Clients.cshtml), the method SharedController.AddClient will invoke method DailyHub.Refresh. This method executes</p>
 <pre><code>hubContext.Clients.All.refreshPage();
 </code></pre>
-<p>which sends a push notification to all registered clients of the hub. Clients listening for this notification, for example the view
-Interviewer/Clients.cshtml, will act upon the notification. In this case, the action will be to refresh the jqGrid of clients displayed by the
-grid. In this way this grid is kept in synch with the grid to which the client was added by the front desk admin.</p>
+<p>which sends a push notification to all registered clients of the hub. The registered clients include all other users logged in as front desk
+admins. They will each see their view Clients.cshtml update without the need to refresh that view. In this way all grids are kept in synch with the grid
+to which the client was added.</p>
 <p>SignalR is also used as the means to update a progress bar display used when processing external Excel files containing check data.
 The code for doing so is found in this excellent <a href="https://www.codeproject.com/articles/1124691/signalr-progress-bar-simple-example-sending-live-d">Code Project article</a>. Application OPIDDaily makes use of this code. On the client side, the progress bar is included as a partial view by the statement</p>
 <pre><code> @Html.Partial("_ModalProgressBar")
 </code></pre>
-<p>See for example file ~/Views/BackOffice/Merge.cshtml. On the server-side the progress bar is updated by executing a call like</p>
+<p>See for example file ~/Views/BackOffice/Merge.cshtml. On the server side the progress bar is updated by executing a call like</p>
 <pre><code> DailyHub.SendProgress("Merge in progress...", i, checkCount);
 </code></pre>
 <p>found on file DAL/Merger.cs.</p>

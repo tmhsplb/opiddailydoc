@@ -9,18 +9,35 @@ The connection string is configured as the value of variable SQLSERVER_CONNECTIO
 Web.config. The static value configured there is used by the desktop environment. The static value is overwritten by injection (at AppHarbor)
 when OPIDDaily is deployed to create either a staging or production release. The transformation files Web.Staging.config and Web.Release.config
 play a role in these deployments. The staging deployment at AppHarbor (called StageDaily) has its Environment variable set to Staging to force
-Web.Staging.config to be used upon deployment. This is done in the Settings section of the deployed application. The production deployment at AppHarbor
-has its Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.
+Web.Staging.config to be used upon deployment. This is done in the Settings section of the deployed application at AppHarbor. (When Web.Staging.config
+was created, it was necessary to set its build action to Content in Visual Studio to include it in the build at AppHarbor.)  The production deployment
+at AppHarbor has its Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.
+
+## SEO
+OPIDDaily is a password protected application that is not intended to be discoverable by search engines. To prevent this it includes
+the following robots.txt file
+
+     User-agent:*
+     Disallow:/
+
+This directs all search engines to ignore the entire site.
 
 ## Visual Studio Project
-The Visual Studio 2019 (Community Edition) project representing application OPIDDaily defines a role-based system. It was developed using the ASP.NET
+To check out application OPIDDaily from GitHub into Visual Studio 2019 (Community Edition), clone
+
+     https://tmhsplb@appharbor.com/opiddaily.git
+
+into a local folder after being made a collaborator on the project. Being a collaborator is necessary in order to commit changes to the GitHub
+repository.
+
+The Visual Studio project representing application OPIDDaily defines a role-based system. It was developed using the ASP.NET
 Identity 2.0 framework. A sample ASP.NET Identity 2.0 project was developed by Syed Shanu and described in the
 [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role).
 
 The sample project uses the Visual Studio MVC5 project template and makes use of Katana OWIN middleware for user authentication. The use of Katana is
 built into the ASP.NET Identity 2.0 provider used by the project template, as is explained in the CodeProject article.
 
-The OPIDaily application was built with information taken from this articles as well as the technique for maintaining 2 data contexts described in  
+The OPIDDaily application was built with information taken from this article as well as the technique for maintaining 2 data contexts described in  
 [Scott Allen's Pluralsight video](https://app.pluralsight.com/player?author=scott-allen&name=aspdotnet-mvc5-fundamentals-m6-ef6&mode=live&clip=1&course=aspdotnet-mvc5-fundamentals).
 
 On the Properties page of the Visual Studio project, remember to select Local IIS as the server and click the Create Virtual Directory button to set
@@ -223,14 +240,7 @@ Executing an add-migration command creates a .cs file in the folder associated w
 update-database command. If the database changes indicated in the .cs file are not correct, simply delete the .cs file before running the
 update-database command and then try again.
 
-To generate a script for the most recent migration(s), go back in the migration history to where the recent migrations start. For example, the migration
-preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the command
-
-    update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:PXXA
-
-The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor. executed at
-AppHarbor, the script will update the _MigrationHistory as well. If the script involves adding a table, then running it before the code is updated
-at AppHarbor will ensure that the table is ready for use when the code that references it is deployed.
+See the section on the Database tab on using PowerShell to create script files to execute at AppHarbor.
 
 ## Configuring IIS
 Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the
@@ -281,8 +291,13 @@ be added to a remote GitHub repository by using tools available through Visual S
 for Windows](https://git-for-windows.github.io/). Git for Windows provides a BASH shell interface to GitHub which uses the same set of commands
 available at GitHub itself. Git for Windows integrates with Windows Explorer to allow a BASH shell to be opened on a project that has been added to a
 desktop Git repository. Simply point Windows Explorer at the folder containing the project solution file and select `Git BASH Here` from the context
-menu of the folder to open a Git for Windows BASH shell. Then execute Git commands from this shell window. Git for Windows also offers Git GUI, a
-graphical version of most Git command line functions. To open Git GUI simply select `Git GUI Here` from Windows Explorer.
+menu of the folder to open a Git for Windows BASH shell. As a first git command, try entering
+
+    git --version
+
+in the shell. This will report the version of Git that has been installed by the download. After that simply execute Git commands from this shell window.
+Git for Windows also offers Git GUI, a graphical version of most Git command line functions. To open Git GUI simply select `Git GUI Here` from Windows
+Explorer.
 
 ## GitHub
 Application OPIDDaily is stored at GitHub as a repository under an account with the email address peter3418@ymail.com and account name tmhsplb.
