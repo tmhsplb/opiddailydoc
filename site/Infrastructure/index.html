@@ -97,6 +97,8 @@
             <li><a href="#git-for-windows">Git for Windows</a></li>
             <li><a href="#github">GitHub</a></li>
             <li><a href="#appharbor">AppHarbor</a></li>
+            <li><a href="#the-staging-and-training-versions-of-application-opiddaily">The Staging and Training Versions of Application OPIDDaily</a></li>
+            <li><a href="#roslyn">Roslyn</a></li>
             <li><a href="#deployment">Deployment</a></li>
             <li><a href="#jqgrid">jqGrid</a></li>
             <li><a href="#elmah">ELMAH</a></li>
@@ -111,14 +113,19 @@
 section will be useful to a developer wanting to maintain and further develop OPIDDaily. It describes both the desktop development environment and the
 AppHarbor deployment environment for the web application OPIDDaily.</p>
 <h2 id="hosting-environments">Hosting Environments</h2>
-<p>There are 3 hosting environments for OPIDDaily: desktop, staging and production. They differ in the database connection string used by each.
-The connection string is configured as the value of variable SQLSERVER_CONNECTION_STRING in the <code>&lt;appSettings&gt;</code> section of
+<p>There are 4 hosting environments for OPIDDaily: desktop, training, staging and production. They differ in the database connection string used by each.
+The connection string is configured as the value of variable <strong>OpidDailyConnectionString</strong> in the <code>&lt;connectionStrings&gt;</code> section of
 Web.config. The static value configured there is used by the desktop environment. The static value is overwritten by injection (at AppHarbor)
-when OPIDDaily is deployed to create either a staging or production release. The transformation files Web.Staging.config and Web.Release.config
-play a role in these deployments. The staging deployment at AppHarbor (called StageDaily) has its Environment variable set to Staging to force
+when OPIDDaily is deployed to create a training, staging or production release. The transformation files Web.Staging.config and Web.Release.config
+play a role in these deployments. The staging deployment at AppHarbor (called stagedaily) has its Environment variable set to Staging to force
 Web.Staging.config to be used upon deployment. This is done in the Settings section of the deployed application at AppHarbor. (When Web.Staging.config
-was created, it was necessary to set its build action to Content in Visual Studio to include it in the build at AppHarbor.)  The production deployment
-at AppHarbor has its Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.</p>
+was created, it was necessary to set its build action to Content in Visual Studio to include it in the build at AppHarbor. The same thing happened
+when Web.Training.config was created.)  The production deployment at AppHarbor has its Environment variable set to Release by default. This causes
+Web.Release.config to be used upon deployment.</p>
+<p>The training release was the last release created. It was created by use of the Configuration Manager under the Visual Studio Build menu. In the
+<code>Active solution configuration</code> dropdown <code>&lt;New&gt;</code> was selected and Training was created with settings copied from the Staging configuration. Then
+<code>Add Config Transform</code> was selected from the context menu of Web.config. (This item is grayed out until a new configuration has been created.) This
+automatically added file Web.Training.config. The <code>&lt;appSettings&gt;</code> section of Web.Staging.config was copied to Web.Training.config.</p>
 <h2 id="seo">SEO</h2>
 <p>OPIDDaily is a password protected application that is not intended to be discoverable by search engines. To prevent this it includes
 the following robots.txt file</p>
@@ -187,6 +194,8 @@ configuring IIS.</p>
 <p>This should be around line 38. Then restart SSMS.</p>
 <p>SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability,
 but it was removed from v18.0. The capability has been added back to newer version of SSMS.</p>
+<p>SSMS can be used to connect to a remote database at AppHarbor. The credentials for the remote database can be discovered by clicking on the
+SQL Server add-on at AppHarbor and then following the <code>Go to SQL Server</code> link on the page that appears.</p>
 <h2 id="entity-framework-code-first">Entity Framework Code First</h2>
 <p>The Visual Studio project OPIDDaily has 2 data contexts called IdentityDB and OpidDailyDB. The technique for establishing a single connection string over
 2 data contexts is described in
@@ -379,8 +388,9 @@ subscription level at AppHarbor.</p>
 space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avoid exceeding the 20MB limit.
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.</p>
-<p>A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO
-NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.</p>
+<h2 id="the-staging-and-training-versions-of-application-opiddaily">The Staging and Training Versions of Application OPIDDaily</h2>
+<p>A staging version of application OPIDDaily was created from a Visual Studio <strong>staging</strong> branch by creating an application called <strong>stagedaily</strong> at AppHarbor.
+DO NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.</p>
 <p>The remote configured for stagedaily at AppHarbor is:</p>
 <pre><code>https://tmhsplbt@appharbor.com/stagedaily.git
 </code></pre>
@@ -393,15 +403,52 @@ NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.</p>
 <p>will deploy the staging branch of OPIDDaily to AppHarbor as application stagedaily, accessible through the URL</p>
 <pre><code>https://stagedaily.apphb.com
 </code></pre>
-<p>All the tables created by Entity Framework migrations magically appeared in the staging version. The magic was probably caused by deployment of the
-codebase of the <strong>staging</strong> branch to AppHarbor. This branch contains all the migrations used by the <strong>master</strong> branch. However, there was one table
-missing: the Invitations table. This table is not included in any migration, so it has to be added manually to the staging database. This is a simple
-matter of using SSMS to script the table and executing the script (in SSMS) against the staging database.</p>
-<p>The scripts that needed to run on the desktop to establish the connection between Visual Studio and the desktop SQL Server did not need to be run
-against the staging database to establish communication with the AppHarbor server.</p>
-<p>It is possible to use AppHarbor to generate a custom domain name for an application, but this has not been done for the OPIDDaily application.  </p>
-<p>On June 6, 2019 I ran into a problem when I first pushed my OPIDDaily solution from my laptop to its GitHub repository and tried to pull the resulting
-solution onto my desktop computer. When I tried to run the solution from my desktop it complained about missing part of the path /bin/roslyn/csc.exe.
+<p>In the same way, a <strong>traindaily</strong> application at AppHarbor was created from a <strong>training</strong> branch in Visual Studio.</p>
+<p>When the <strong>stagedaily</strong> application was run for the first time, all the migrations up to the migration ending in 18024_AgencyId in OpidDailyMigrations in
+Visual Studio were automatically applied and added to the _MigrationHistory table. There were several missing migrations in the _MigrationHistory
+table because the application of migrations stopped due to migration 18024_AgencyId. This migration could
+not be applied because it references the <strong>Invitations</strong> table which was not created by any migration which preceded it.   </p>
+<p>This required adding the <strong>Invitations</strong> table to the <strong>stagedaily</strong> database through SSMS by executing the following script:</p>
+<pre><code>SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Invitations](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Extended] [datetime] NOT NULL,
+    [Accepted] [datetime] NOT NULL,
+    [UserName] [nvarchar](max) NULL,
+    [FullName] [nvarchar](max) NULL,
+    [Email] [nvarchar](max) NULL,
+    [Role] [nvarchar](max) NULL,
+    [AgencyId] [int] NOT NULL,
+ CONSTRAINT [PK_dbo.Invitations] PRIMARY KEY CLUSTERED
+(
+    [Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Invitations] ADD  DEFAULT ((0)) FOR [AgencyId]
+GO
+</code></pre>
+
+<p>After the <strong>Invitations</strong> table had been created in the <strong>stagedaily</strong> database by executing the above script, a script for the missing migrations was
+created in Visual Studio:</p>
+<pre><code>    PM&gt; update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:AgencyId
+</code></pre>
+
+<p>Executing the created script in SSMS against the <strong>stagedaily</strong> database updated the database and created the missing migrations in the _MigrationHistory
+table.</p>
+<p>The same procedure was followed to create the <strong>traindaily</strong> database: the <strong>Invitations</strong> table was created via executing the above script and then
+the missing migrations were added by executing the script created by the update-database command.</p>
+<p>Requiring this procedure is an inconvenience caused by unfamiliarity with Entity Framework Code First migrations at the time application OPIDDaily was
+originally created. It is possible that a migration creating table <strong>Invitations</strong> was accidentally deleted during the original creation.</p>
+<h2 id="roslyn">Roslyn</h2>
+<p>On June 6, 2019 I ran into a problem when I first pushed my OPIDDaily solution from my laptop to its GitHub repository and tried to clone the resulting
+repository onto my desktop computer. When I tried to run the solution from my desktop it complained about missing part of the path /bin/roslyn/csc.exe.
 I found a fix that worked at StackOverflow</p>
 <pre><code> https://stackoverflow.com/questions/32780315/could-not-find-a-part-of-the-path-bin-roslyn-csc-exe
 </code></pre>
@@ -409,27 +456,35 @@ I found a fix that worked at StackOverflow</p>
 I tried and it worked!</p>
 <h2 id="deployment">Deployment</h2>
 <p>This section summarizes deployment to AppHarbor. Much of the information here can be found in the section on AppHarbor.</p>
-<p>There are two applications at AppHarbor: opiddaily and stagedaily. Application opiddaily is the deployment of the Visual Studio <strong>master</strong>
-branch of solution OPIDDaily. Application stagedaily is the deployment of the Visual Studio <strong>staging</strong> branch of solution OPIDDaily.</p>
+<p>There are three applications at AppHarbor: <strong>opiddaily</strong> ,<strong>stagedaily</strong> and <strong>traindaily</strong>. Application <strong>opiddaily</strong> is the deployment of the Visual Studio
+<strong>master</strong> branch of solution OPIDDaily. Application <strong>stagedaily</strong> is the deployment of the Visual Studio <strong>staging</strong> branch of solution OPIDDaily and
+application <strong>traindaily</strong> is the deployment of branch <strong>training</strong> in Visual Studio.</p>
 <p>After configuring the <strong>opiddaily remote</strong> the Visual Studio production branch can be deployed to AppHarbor by using
 the Git BASH Shell command</p>
 <pre><code>git push opiddaily master
 </code></pre>
 <p>AppHarbor will automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
-deploying the code, application OPIDDaily can be viewed at</p>
+deploying the code, application <strong>opiddaily</strong> can be viewed at</p>
 <pre><code>https://opiddaily.apphb.com
 </code></pre>
 <p>After configuring the staging remote (see above) the Visual Studio staging branch can be deployed to AppHarbor by using the Git BASH Shell command</p>
 <pre><code>git push stagedaily staging
 </code></pre>
-<p>AppHarbor will not automatically deploy application stagedaily even if the build is successful. It is necessary to click on the Deploy button
-at AppHarbor to deploy a successful build of application stagedaily. This may be by design if application stagedaily is recognized as a GitHub
+<p>AppHarbor will not automatically deploy application <strong>stagedaily</strong> even if the build is successful. It is necessary to click on the Deploy button
+at AppHarbor to deploy a successful build of application <strong>stagedaily</strong>. This may be by design if application <strong>stagedaily</strong> is recognized as a GitHub
 branch of application OPIDDaily.</p>
-<p>After clicking the Deploy button at AppHarbor to deploy a successful build of application stagedaily, the application can be viewed at</p>
+<p>After clicking the Deploy button at AppHarbor to deploy a successful build of application <strong>stagedaily</strong>, the application can be viewed at</p>
 <pre><code>https://stagedaily.apphb.com
 </code></pre>
-<p>Although there are two applications at AppHarbor, there is only a single repository at GitHub. The name of this single repository is OPIDDaily. The
-repository is by default focused on the <strong>master</strong> branch of the codebase but can be switched to the <strong>staging</strong> branch by using the GitHub interface.</p>
+<p>After configuring the training remote (see above) the Visual Studio training branch can be deployed to AppHarbor by using the Git BASH Shell command</p>
+<pre><code>git push traindaily training
+</code></pre>
+<p>Again, the Deploy button must be clicked to actually deploy application <strong>traindaily</strong> and run it through the URL</p>
+<pre><code>https://traindaily.apphb.com
+</code></pre>
+<p>Although there are three applications at AppHarbor, there is only a single repository at GitHub. The name of this single repository is OPIDDaily. The
+repository is by default focused on the <strong>master</strong> branch of the codebase but can be switched to the <strong>staging</strong> branch or <strong>training</strong> branch by using the
+GitHub interface.</p>
 <h2 id="jqgrid">jqGrid</h2>
 <p>Almost every page of the application OPIDDaily features a grid produced by the jQuery jqGrid component. It was installed into the OPIDDaily project by
 using the Package Manager command:</p>
@@ -459,7 +514,7 @@ visible to a client remotely running the application, add</p>
 ELMAH will write to a database table called ELMAH_Error. The DDL Script definition of this table is found in a
 <a href="https://elmah.github.io/downloads/">separate download</a>. Download the DDL Script for MS SQL Server from the referenced web page. The script is a .SQL
 file which may be executed as a query inside SSMS to create table ELMAH_Error.</p>
-<p>The ELMAH log is configured by the connection string named OPidDailyConnectionString on Web.config. The value of this connection string is overwritten
+<p>The ELMAH log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is overwritten
 when the application is deployed to AppHarbor. See the Connection String section of the Database tab.</p>
 <p>The <code>&lt;sytem.web&gt;</code> section of Web.config must configure</p>
 <pre><code>&lt;httpHandlers&gt;
@@ -491,70 +546,73 @@ for creating table Log (renamed AppLog in application OPIDDaily). The script mus
 <p>The application log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is
 overwritten when the application is deployed to AppHarbor. See the Connection String section of the Database tab.</p>
 <p>log4net requires some additional configuration in Web.config. In the <configSections> section add:</p>
-<section name="log4net" type="log4net.Config.Log4NetConfigurationSectionHandler, log4net" />
+<pre><code>   &lt;section name=&quot;log4net&quot; type=&quot;log4net.Config.Log4NetConfigurationSectionHandler, log4net&quot; /&gt;
+</code></pre>
 
 <p>After the <configSections> section add the definition of the AdoNetAppender:</p>
-<p><log4net debug="true">
-      <appender name="AdoNetAppender" type="log4net.Appender.AdoNetAppender">
-        <!--Change to 10 or MORE. This is critical, after 10 messages then log to database-->
-        <bufferSize value="1" />
-        <connectionType value="System.Data.SqlClient.SqlConnection, System.Data, Version=1.0.3300.0,
-              Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-        <connectionStringName value="OpidDailyConnectionString" />
-        <commandText value="INSERT INTO AppLog ([Date],[Thread],[Level],[Logger],[Message],[Exception])
-               VALUES (@log_date, @thread, @log_level, @logger, @message, @exception)" />
-        <commandType value="Text" />
-        <!--<commmandText value="dbo.procLog_Insert"/> <commandType value="StoredProcedure"/>-->
-        <parameter>
-          <parameterName value="@log_date" />
-          <dbType value="DateTime" />
-           <layout type="log4net.Layout.RawTimeStampLayout" />
-         </parameter>
-         <parameter>
-           <parameterName value="@thread" />
-           <dbType value="String" />
-           <size value="255" />
-           <layout type="log4net.Layout.PatternLayout">
-              <conversionPattern value="%thread" />
-           </layout>
-         </parameter>
-         <parameter>
-            <parameterName value="@log_level" />
-            <dbType value="String" />
-            <size value="50" />
-            <layout type="log4net.Layout.PatternLayout">
-               <conversionPattern value="%level" />
-            </layout>
-         </parameter>
-         <parameter>
-            <parameterName value="@logger" />
-            <dbType value="String" />
-            <size value="255" />
-            <layout type="log4net.Layout.PatternLayout">
-               <conversionPattern value="%logger" />
-            </layout>
-          </parameter>
-          <parameter>
-             <parameterName value="@message" />
-               <dbType value="String" />
-               <size value="4000" />
-             <layout type="log4net.Layout.PatternLayout">
-                <conversionPattern value="%message" />
-             </layout>
-           </parameter>
-           <parameter>
-              <parameterName value="@exception" />
-              <dbType value="String" />
-              <size value="2000" />
-              <layout type="log4net.Layout.ExceptionLayout" />
-          </parameter>
-      </appender>
-      <root>
-         <level value="DEBUG" />
-            <!-- <appender-ref ref="RollingLogFileAppender" /> -->
-         <appender-ref ref="AdoNetAppender" />
-      </root>
-    </log4net></p>
+<pre><code>   &lt;log4net debug=&quot;true&quot;&gt;
+      &lt;appender name=&quot;AdoNetAppender&quot; type=&quot;log4net.Appender.AdoNetAppender&quot;&gt;
+        &lt;!--Change to 10 or MORE. This is critical, after 10 messages then log to database--&gt;
+        &lt;bufferSize value=&quot;1&quot; /&gt;
+        &lt;connectionType value=&quot;System.Data.SqlClient.SqlConnection, System.Data, Version=1.0.3300.0,
+              Culture=neutral, PublicKeyToken=b77a5c561934e089&quot; /&gt;
+        &lt;connectionStringName value=&quot;OpidDailyConnectionString&quot; /&gt;
+        &lt;commandText value=&quot;INSERT INTO AppLog ([Date],[Thread],[Level],[Logger],[Message],[Exception])
+               VALUES (@log_date, @thread, @log_level, @logger, @message, @exception)&quot; /&gt;
+        &lt;commandType value=&quot;Text&quot; /&gt;
+        &lt;!--&lt;commmandText value=&quot;dbo.procLog_Insert&quot;/&gt; &lt;commandType value=&quot;StoredProcedure&quot;/&gt;--&gt;
+        &lt;parameter&gt;
+          &lt;parameterName value=&quot;@log_date&quot; /&gt;
+          &lt;dbType value=&quot;DateTime&quot; /&gt;
+           &lt;layout type=&quot;log4net.Layout.RawTimeStampLayout&quot; /&gt;
+         &lt;/parameter&gt;
+         &lt;parameter&gt;
+           &lt;parameterName value=&quot;@thread&quot; /&gt;
+           &lt;dbType value=&quot;String&quot; /&gt;
+           &lt;size value=&quot;255&quot; /&gt;
+           &lt;layout type=&quot;log4net.Layout.PatternLayout&quot;&gt;
+              &lt;conversionPattern value=&quot;%thread&quot; /&gt;
+           &lt;/layout&gt;
+         &lt;/parameter&gt;
+         &lt;parameter&gt;
+            &lt;parameterName value=&quot;@log_level&quot; /&gt;
+            &lt;dbType value=&quot;String&quot; /&gt;
+            &lt;size value=&quot;50&quot; /&gt;
+            &lt;layout type=&quot;log4net.Layout.PatternLayout&quot;&gt;
+               &lt;conversionPattern value=&quot;%level&quot; /&gt;
+            &lt;/layout&gt;
+         &lt;/parameter&gt;
+         &lt;parameter&gt;
+            &lt;parameterName value=&quot;@logger&quot; /&gt;
+            &lt;dbType value=&quot;String&quot; /&gt;
+            &lt;size value=&quot;255&quot; /&gt;
+            &lt;layout type=&quot;log4net.Layout.PatternLayout&quot;&gt;
+               &lt;conversionPattern value=&quot;%logger&quot; /&gt;
+            &lt;/layout&gt;
+          &lt;/parameter&gt;
+          &lt;parameter&gt;
+             &lt;parameterName value=&quot;@message&quot; /&gt;
+               &lt;dbType value=&quot;String&quot; /&gt;
+               &lt;size value=&quot;4000&quot; /&gt;
+             &lt;layout type=&quot;log4net.Layout.PatternLayout&quot;&gt;
+                &lt;conversionPattern value=&quot;%message&quot; /&gt;
+             &lt;/layout&gt;
+           &lt;/parameter&gt;
+           &lt;parameter&gt;
+              &lt;parameterName value=&quot;@exception&quot; /&gt;
+              &lt;dbType value=&quot;String&quot; /&gt;
+              &lt;size value=&quot;2000&quot; /&gt;
+              &lt;layout type=&quot;log4net.Layout.ExceptionLayout&quot; /&gt;
+          &lt;/parameter&gt;
+      &lt;/appender&gt;
+      &lt;root&gt;
+         &lt;level value=&quot;DEBUG&quot; /&gt;
+            &lt;!-- &lt;appender-ref ref=&quot;RollingLogFileAppender&quot; /&gt; --&gt;
+         &lt;appender-ref ref=&quot;AdoNetAppender&quot; /&gt;
+      &lt;/root&gt;
+    &lt;/log4net&gt;
+</code></pre>
+
 <p>Notice that the configured value of the bufferSize is 1, despite the comment above the configuration to use a value of 10 or more. The value
 of 1 is chosen so that buffering of log statements will not occur; each log statement will be written to the log file at the time it is
 generated. This is important because OPIDDaily does not include many log statements. If the buffer size were set to 10 or more, then log

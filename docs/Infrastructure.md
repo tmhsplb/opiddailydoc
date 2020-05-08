@@ -4,14 +4,20 @@ section will be useful to a developer wanting to maintain and further develop OP
 AppHarbor deployment environment for the web application OPIDDaily.
 
 ## Hosting Environments
-There are 3 hosting environments for OPIDDaily: desktop, staging and production. They differ in the database connection string used by each.
-The connection string is configured as the value of variable SQLSERVER_CONNECTION_STRING in the `<appSettings>` section of
+There are 4 hosting environments for OPIDDaily: desktop, training, staging and production. They differ in the database connection string used by each.
+The connection string is configured as the value of variable **OpidDailyConnectionString** in the `<connectionStrings>` section of
 Web.config. The static value configured there is used by the desktop environment. The static value is overwritten by injection (at AppHarbor)
-when OPIDDaily is deployed to create either a staging or production release. The transformation files Web.Staging.config and Web.Release.config
-play a role in these deployments. The staging deployment at AppHarbor (called StageDaily) has its Environment variable set to Staging to force
+when OPIDDaily is deployed to create a training, staging or production release. The transformation files Web.Staging.config and Web.Release.config
+play a role in these deployments. The staging deployment at AppHarbor (called stagedaily) has its Environment variable set to Staging to force
 Web.Staging.config to be used upon deployment. This is done in the Settings section of the deployed application at AppHarbor. (When Web.Staging.config
-was created, it was necessary to set its build action to Content in Visual Studio to include it in the build at AppHarbor.)  The production deployment
-at AppHarbor has its Environment variable set to Release by default. This causes Web.Release.config to be used upon deployment.
+was created, it was necessary to set its build action to Content in Visual Studio to include it in the build at AppHarbor. The same thing happened
+when Web.Training.config was created.)  The production deployment at AppHarbor has its Environment variable set to Release by default. This causes
+Web.Release.config to be used upon deployment.
+
+The training release was the last release created. It was created by use of the Configuration Manager under the Visual Studio Build menu. In the
+`Active solution configuration` dropdown `<New>` was selected and Training was created with settings copied from the Staging configuration. Then
+`Add Config Transform` was selected from the context menu of Web.config. (This item is grayed out until a new configuration has been created.) This
+automatically added file Web.Training.config. The `<appSettings>` section of Web.Staging.config was copied to Web.Training.config.
 
 ## SEO
 OPIDDaily is a password protected application that is not intended to be discoverable by search engines. To prevent this it includes
@@ -102,6 +108,9 @@ This should be around line 38. Then restart SSMS.
 
 SSMS v18.0 does not have the capability to generate database diagrams. Previous versions of SSMS had this capability,
 but it was removed from v18.0. The capability has been added back to newer version of SSMS.
+
+SSMS can be used to connect to a remote database at AppHarbor. The credentials for the remote database can be discovered by clicking on the
+SQL Server add-on at AppHarbor and then following the `Go to SQL Server` link on the page that appears.
 
 ## Entity Framework Code First
 The Visual Studio project OPIDDaily has 2 data contexts called IdentityDB and OpidDailyDB. The technique for establishing a single connection string over
@@ -360,8 +369,9 @@ space, which is adequate for many days of usage by Operation ID. However, the da
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.
 
-A staging version of application OPIDDaily was created by creating an application called stagedaily at AppHarbor. DO
-NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.
+## The Staging and Training Versions of Application OPIDDaily
+A staging version of application OPIDDaily was created from a Visual Studio **staging** branch by creating an application called **stagedaily** at AppHarbor.
+DO NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.
 
 The remote configured for stagedaily at AppHarbor is:
 
@@ -379,18 +389,60 @@ will deploy the staging branch of OPIDDaily to AppHarbor as application stagedai
 
     https://stagedaily.apphb.com
 
-All the tables created by Entity Framework migrations magically appeared in the staging version. The magic was probably caused by deployment of the
-codebase of the **staging** branch to AppHarbor. This branch contains all the migrations used by the **master** branch. However, there was one table
-missing: the Invitations table. This table is not included in any migration, so it has to be added manually to the staging database. This is a simple
-matter of using SSMS to script the table and executing the script (in SSMS) against the staging database.
+In the same way, a **traindaily** application at AppHarbor was created from a **training** branch in Visual Studio.
 
-The scripts that needed to run on the desktop to establish the connection between Visual Studio and the desktop SQL Server did not need to be run
-against the staging database to establish communication with the AppHarbor server.
+When the **stagedaily** application was run for the first time, all the migrations up to the migration ending in 18024_AgencyId in OpidDailyMigrations in
+Visual Studio were automatically applied and added to the _MigrationHistory table. There were several missing migrations in the _MigrationHistory
+table because the application of migrations stopped due to migration 18024_AgencyId. This migration could
+not be applied because it references the **Invitations** table which was not created by any migration which preceded it.   
 
-It is possible to use AppHarbor to generate a custom domain name for an application, but this has not been done for the OPIDDaily application.  
+This required adding the **Invitations** table to the **stagedaily** database through SSMS by executing the following script:
 
-On June 6, 2019 I ran into a problem when I first pushed my OPIDDaily solution from my laptop to its GitHub repository and tried to pull the resulting
-solution onto my desktop computer. When I tried to run the solution from my desktop it complained about missing part of the path /bin/roslyn/csc.exe.
+```
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Invitations](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Extended] [datetime] NOT NULL,
+	[Accepted] [datetime] NOT NULL,
+	[UserName] [nvarchar](max) NULL,
+	[FullName] [nvarchar](max) NULL,
+	[Email] [nvarchar](max) NULL,
+	[Role] [nvarchar](max) NULL,
+	[AgencyId] [int] NOT NULL,
+ CONSTRAINT [PK_dbo.Invitations] PRIMARY KEY CLUSTERED
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Invitations] ADD  DEFAULT ((0)) FOR [AgencyId]
+GO
+```
+After the **Invitations** table had been created in the **stagedaily** database by executing the above script, a script for the missing migrations was
+created in Visual Studio:
+
+```
+    PM> update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:AgencyId
+```
+
+Executing the created script in SSMS against the **stagedaily** database updated the database and created the missing migrations in the _MigrationHistory
+table.
+
+The same procedure was followed to create the **traindaily** database: the **Invitations** table was created via executing the above script and then
+the missing migrations were added by executing the script created by the update-database command.
+
+Requiring this procedure is an inconvenience caused by unfamiliarity with Entity Framework Code First migrations at the time application OPIDDaily was
+originally created. It is possible that a migration creating table **Invitations** was accidentally deleted during the original creation.
+
+## Roslyn
+On June 6, 2019 I ran into a problem when I first pushed my OPIDDaily solution from my laptop to its GitHub repository and tried to clone the resulting
+repository onto my desktop computer. When I tried to run the solution from my desktop it complained about missing part of the path /bin/roslyn/csc.exe.
 I found a fix that worked at StackOverflow
 
      https://stackoverflow.com/questions/32780315/could-not-find-a-part-of-the-path-bin-roslyn-csc-exe
@@ -401,8 +453,9 @@ I tried and it worked!
 ## Deployment
 This section summarizes deployment to AppHarbor. Much of the information here can be found in the section on AppHarbor.
 
-There are two applications at AppHarbor: opiddaily and stagedaily. Application opiddaily is the deployment of the Visual Studio **master**
-branch of solution OPIDDaily. Application stagedaily is the deployment of the Visual Studio **staging** branch of solution OPIDDaily.
+There are three applications at AppHarbor: **opiddaily** ,**stagedaily** and **traindaily**. Application **opiddaily** is the deployment of the Visual Studio
+**master** branch of solution OPIDDaily. Application **stagedaily** is the deployment of the Visual Studio **staging** branch of solution OPIDDaily and
+application **traindaily** is the deployment of branch **training** in Visual Studio.
 
 After configuring the **opiddaily remote** the Visual Studio production branch can be deployed to AppHarbor by using
 the Git BASH Shell command
@@ -410,7 +463,7 @@ the Git BASH Shell command
     git push opiddaily master
 
 AppHarbor will automatically deploy application OPIDDaily if the push results in a successful build. After AppHarbor finishes building and
-deploying the code, application OPIDDaily can be viewed at
+deploying the code, application **opiddaily** can be viewed at
 
     https://opiddaily.apphb.com
 
@@ -418,16 +471,25 @@ deploying the code, application OPIDDaily can be viewed at
 
     git push stagedaily staging
 
-AppHarbor will not automatically deploy application stagedaily even if the build is successful. It is necessary to click on the Deploy button
-at AppHarbor to deploy a successful build of application stagedaily. This may be by design if application stagedaily is recognized as a GitHub
+AppHarbor will not automatically deploy application **stagedaily** even if the build is successful. It is necessary to click on the Deploy button
+at AppHarbor to deploy a successful build of application **stagedaily**. This may be by design if application **stagedaily** is recognized as a GitHub
 branch of application OPIDDaily.
 
-After clicking the Deploy button at AppHarbor to deploy a successful build of application stagedaily, the application can be viewed at
+After clicking the Deploy button at AppHarbor to deploy a successful build of application **stagedaily**, the application can be viewed at
 
     https://stagedaily.apphb.com
 
-Although there are two applications at AppHarbor, there is only a single repository at GitHub. The name of this single repository is OPIDDaily. The
-repository is by default focused on the **master** branch of the codebase but can be switched to the **staging** branch by using the GitHub interface.
+After configuring the training remote (see above) the Visual Studio training branch can be deployed to AppHarbor by using the Git BASH Shell command
+
+    git push traindaily training
+
+Again, the Deploy button must be clicked to actually deploy application **traindaily** and run it through the URL
+
+    https://traindaily.apphb.com
+
+Although there are three applications at AppHarbor, there is only a single repository at GitHub. The name of this single repository is OPIDDaily. The
+repository is by default focused on the **master** branch of the codebase but can be switched to the **staging** branch or **training** branch by using the
+GitHub interface.
 
 ## jqGrid
 Almost every page of the application OPIDDaily features a grid produced by the jQuery jqGrid component. It was installed into the OPIDDaily project by
@@ -467,7 +529,7 @@ ELMAH will write to a database table called ELMAH_Error. The DDL Script definiti
 [separate download](https://elmah.github.io/downloads/). Download the DDL Script for MS SQL Server from the referenced web page. The script is a .SQL
 file which may be executed as a query inside SSMS to create table ELMAH_Error.
 
-The ELMAH log is configured by the connection string named OPidDailyConnectionString on Web.config. The value of this connection string is overwritten
+The ELMAH log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is overwritten
 when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
 
 The `<sytem.web>` section of Web.config must configure
@@ -506,11 +568,11 @@ The application log is configured by the connection string named OpidDailyConnec
 overwritten when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
 
 log4net requires some additional configuration in Web.config. In the <configSections> section add:
-
+```
    <section name="log4net" type="log4net.Config.Log4NetConfigurationSectionHandler, log4net" />
-
+```
 After the <configSections> section add the definition of the AdoNetAppender:
-
+```
    <log4net debug="true">
       <appender name="AdoNetAppender" type="log4net.Appender.AdoNetAppender">
         <!--Change to 10 or MORE. This is critical, after 10 messages then log to database-->
@@ -572,7 +634,7 @@ After the <configSections> section add the definition of the AdoNetAppender:
          <appender-ref ref="AdoNetAppender" />
       </root>
     </log4net>
-
+```
 Notice that the configured value of the bufferSize is 1, despite the comment above the configuration to use a value of 10 or more. The value
 of 1 is chosen so that buffering of log statements will not occur; each log statement will be written to the log file at the time it is
 generated. This is important because OPIDDaily does not include many log statements. If the buffer size were set to 10 or more, then log

@@ -90,7 +90,8 @@
         <li class="main active"><a href="#database">Database</a></li>
             <li><a href="#connection-string">Connection String</a></li>
             <li><a href="#database-diagram">Database Diagram</a></li>
-            <li><a href="#using-powershell-to-create-script-files">Using PowerShell to Create Script Files</a></li>
+            <li><a href="#adding-migrations-via-script">Adding migrations via script</a></li>
+            <li><a href="#backing-out-migrations-via-script">Backing out migrations via script</a></li>
             <li><a href="#bootstrapping-the-database-for-a-cloned-copy-of-opiddaily">Bootstrapping the Database for a Cloned Copy of OPIDDaily</a></li>
             <li><a href="#database-duplicates">Database Duplicates</a></li>
             <li><a href="#managing-users">Managing Users</a></li>
@@ -108,12 +109,12 @@ database features used. SQL Server Management Studio v18.0 (SSMS) is used to man
 Authentication is used to connect to the Sql Server Express database. In the online environment, SQL Server Authentication is used to connect to the
 SQL Server database.</p>
 <p>When application OPIDDaily was created at AppHarbor, a free version of SQL Server was added on through the AppHarbor interface. The connection string
-to this SQL Server is found by selecting the SQL Server add-on and following the "Go to SQL Server" link on the page that appears. The value of this
+to this SQL Server is found by selecting the SQL Server add-on and following the <code>Go to SQL Server</code> link on the page that appears. The value of this
 connection string is stored as the value of Config.WorkingProductionConnection string on file Config.cs. The 3 components of the connection string,
 HostName, UserName and Password, are also displayed on this page. The components may be used to configure a SQL Server Authentication connection to
 the AppHarbor database through SSMS.</p>
 <p>The same connection string displayed at AppHarbor is retrieved at runtime by accessing Config.ConnectionString, which returns the value of
-SQLSERVER_CONNNECTION_STRING configured in the <code>&lt;appSettings&gt;</code> section of file Web.config. The statically configured value on file Web.Config points to
+<strong>OpidDailyConnectionString</strong> configured in the <code>&lt;connectionStrings&gt;</code> section of file Web.config. The statically configured value on file Web.Config points to
 the OpidDailyDB on the desktop SQL Server Express. At runtime, AppHarbor will overwrite this statically configured value with the value displayed at
 AppHarbor. See the section on the Connection String on this tab.</p>
 <h2 id="connection-string">Connection String</h2>
@@ -138,11 +139,11 @@ Web.config.</p>
 
 <p>The value of <strong>OpidDailyConnectionString</strong> is overwritten at application deployment time at AppHarbor. This is accomplished by setting the
 connection string alias for the SQL Server add-on at AppHarbor to be <strong>OpidDailyConnectionString</strong>. To set this alias, select the SQL Server
-add-on for application OPIDDaily at AppHarbor and then follow  the link "Go to SQL Server" on the page that appears. Click the button labeled
+add-on for application OPIDDaily at AppHarbor and then follow  the link <code>Go to SQL Server</code> on the page that appears. Click the button labeled
 "Edit database configuration" to set <strong>OpidDailyConnectionString</strong> as the alias value for the connection string. When this is done,
 <strong>OpidDailyConnectionString</strong> will appear as the value of SQLSERVER_CONNECTION_STRING_ALIAS in the Configuration variables section of application
-OPIDDaily at AppHarbor. When application OPIDDaily is deployed at AppHarbor, this alias will overwrite the configured value of <strong>OpidDailyConnectionString</strong>
-on file Web.config by the value of the connection string for the AppHarbor database.</p>
+OPIDDaily at AppHarbor. When application OPIDDaily is deployed at AppHarbor, this alias will overwrite the configured value of
+<strong>OpidDailyConnectionString</strong> on file Web.config by the value of the connection string for the AppHarbor database.</p>
 <p>If you run the OPIDDaily application on the desktop and see the error the error</p>
 <pre><code>The wait operation timed out
 </code></pre>
@@ -167,11 +168,11 @@ is used to store check data. It is referenced to the <strong>Clients</strong> ta
 a client in the Apricot database together with a particular visit the client has made to Operation ID. The service history of a client consists of
 the checks that haven been issued to the client. To retrieve the service history from the table <strong>RChecks</strong> the client is looked up by last name and DOB.
 This is not guaranteed to be a unique lookup, but it almost always is.</p>
-<p>The name <strong>RChecks</strong> is short for <strong>research checks</strong>. The <strong>RChecks</strong> table was so named because checks whose disposition is unknown are said to be under
-research until their disposition is resolved. The <strong>AncientChecks</strong> table was added to relieve the overcrowding of the <strong>RChecks</strong> table. Originally table
-<strong>RChecks</strong> contained all the checks that have been issued by Operation ID. Updating this table with a batch of new checks became slow as the table grew.
-So the table was split up into 2 tables by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the <strong>AncientChecks</strong> table
-contains checks from the years 2016 and 2017.</p>
+<p>The name <strong>RChecks</strong> is short for <strong>research checks</strong>. The <strong>RChecks</strong> table was so named because checks whose disposition is unknown are said to be
+under research until their disposition is resolved. The <strong>AncientChecks</strong> table was added to relieve the overcrowding of the <strong>RChecks</strong> table.
+Originally table <strong>RChecks</strong> contained all the checks that have been issued by Operation ID. Updating this table with a batch of new checks became slow
+as the table grew. So the table was split up into 2 tables by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the
+<strong>AncientChecks</strong> table contains checks from the years 2016 and 2017.</p>
 <p>There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
 from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as
 part of a client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed
@@ -202,47 +203,36 @@ always 0.) The non-ASP.NET Identity tables in the diagram are managed by a separ
 <p>The Visual Studio project OPIDDaily has 2 data contexts called IdentityDb and OpidDailyDB. (See the section Entity Framework Code First of the
 Infrastructure tab.) The technique for establishing a single connection string over 2 data contexts is described in
 <a href="https://app.pluralsight.com/player?author=scott-allen&amp;name=aspdotnet-mvc5-fundamentals-m6-ef6&amp;mode=live&amp;clip=1&amp;course=aspdotnet-mvc5-fundamentals">Scott Allen's Pluralsight video</a>.</p>
-<p>The tables belonging to data context OpidDailyDB were created at AppHarbor using a script file. See the next section for how this was done.</p>
-<h2 id="using-powershell-to-create-script-files">Using PowerShell to Create Script Files</h2>
-<p>The tables belonging to data context OpidDailyDB were created at AppHarbor by running the PowerShell the command</p>
-<pre><code>PM&gt; update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration $InitialDatabase
-</code></pre>
-<p>to generate a SQL script to be run in SSMS against the database at AppHarbor.  </p>
-<p>The command created a script file necessary to create the tables for this data context using all the migrations applied since the initial migration.
-Notice that there is no colon (:) following -SourceMigration in this command.</p>
-<p>To generate a script to run the Down methods of multiple down-migrations, do, for example,</p>
-<pre><code>PM&gt; Update-Database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -TargetMigration: ExpressClient
-</code></pre>
-<p>Notice that there is a colon (:) following -TargetMigration in this command. This command will create a script to execute in SSMS the Down methods of all
-migrations since (and not including) migration ExpressClient. It is important to be able to generate this script if changes need to be backed out,
-because the deployed versions of application OPIDDaily cannot be managed by the Package Manager (PowerShell) window available in Visual Studio. The script
-to execute the Down methods must be run in SSMS. After the script has been executed, the reverted migration may be safely deleted from the set of
-migrations maintained for the data context.</p>
+<p>The tables belonging to data context OpidDailyDB were created at AppHarbor using a script file.  </p>
+<h2 id="adding-migrations-via-script">Adding migrations via script</h2>
 <p>To generate a script for the Up methods of the most recent migration(s), go back in the migration history to where the recent migrations start. For
 example, the migration preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the
 command</p>
 <pre><code>update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -SourceMigration:PXXA
 </code></pre>
-<p>The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor. Executed at
-AppHarbor, the script will update the _MigrationHistory as well. If the script involves adding a table, then running it before the code is updated
+<p>The generated script can be run against the database at AppHarbor using SSMS. The script should be run before the code is updated at AppHarbor.
+The script will also update the _MigrationHistory table. If the script involves adding a table, then running it before the code is updated
 at AppHarbor will ensure that the table is ready for use when the code that references it is deployed.</p>
-<p>Notice that the difference between the last two PowerShell commands is the use of -TargetMigration: to generate a script to run the Down methods
-and the use of -SourceMigration: to generate a script to run the Up methods.</p>
+<h2 id="backing-out-migrations-via-script">Backing out migrations via script</h2>
+<p>To generate a script to run the Down methods of multiple down-migrations, do, for example,</p>
+<pre><code>PM&gt; Update-Database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -Script -TargetMigration: ExpressClient
+</code></pre>
+<p>This command will create a script to execute in SSMS the Down methods of all
+migrations since (and not including) migration ExpressClient. It is important to be able to generate this script if changes need to be backed out,
+because the deployed versions of application OPIDDaily cannot be managed by the Package Manager (PowerShell) window available in Visual Studio. The
+script to execute the Down methods must be run in SSMS. After the script has been executed, the reverted migration may be safely deleted from the set of
+migrations maintained for the data context.</p>
 <h2 id="bootstrapping-the-database-for-a-cloned-copy-of-opiddaily">Bootstrapping the Database for a Cloned Copy of OPIDDaily</h2>
 <p>To create a cloned copy of OPIDDaily from the GitHub repository, supply the repository address</p>
 <pre><code> https://github.com/tmhsplb/opiddaily.git
 </code></pre>
 <p>to Visual Studio. Before running the project for the first time, use SSMS to setup a database called OpidDailyDB, as described in the
 SQL Server Express and SSMS section of the Infrastructure tab.</p>
-<p>The first time the project is run, the middleware code on file Startup.cs will cause the Identity Tables to be created in the database, but
-there are many pending migrations that need to be applied to the database. Using the PowerShell command</p>
-<pre><code> update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration -SourceMigration:PXXA
-</code></pre>
-<p>may run all the pending migrations. Note that this is the same command used in the last section, except that this command does not
-include the -Script argument to the update-database command. Although PXXA is neither the first nor the last pending migration, there
-is evidence that this will cause all pending migrations to run. Please report your results if you have cloned a copy of OPIDDaily
-and made it work on your localhost.</p>
-<p>In any case, you will need to be made a collaborator on the project in order to commit changes to the GitHub repository for OPIDDaily.</p>
+<p>It will be necessary to follow the instructions for creating the <strong>Invitations</strong> table given in the section titled The <strong>Staging</strong> and <strong>Training</strong> Versions of
+Application OPIDDaily on the Infrastructure tab. How to add missing migrations after the cloned copy is run for the first time is also explained in that
+section.</p>
+<p>It will be necessary to be made a collaborator on the project in order to commit changes in the cloned copy to the GitHub
+repository for OPIDDaily.</p>
 <h2 id="database-duplicates">Database Duplicates</h2>
 <p>There are still many duplicates in the Apricot database as a result of the initial build from the legacy Access database. As an example,
 there are two records for the client John Harmon, DOB 9/11/1983:</p>
