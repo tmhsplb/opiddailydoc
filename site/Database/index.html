@@ -92,7 +92,7 @@
             <li><a href="#database-diagram">Database Diagram</a></li>
             <li><a href="#adding-migrations-via-script">Adding migrations via script</a></li>
             <li><a href="#backing-out-migrations-via-script">Backing out migrations via script</a></li>
-            <li><a href="#bootstrapping-the-database-for-a-cloned-copy-of-opiddaily">Bootstrapping the Database for a Cloned Copy of OPIDDaily</a></li>
+            <li><a href="#creating-a-cloned-copy-of-opiddaily">Creating a Cloned Copy of OPIDDaily</a></li>
             <li><a href="#database-duplicates">Database Duplicates</a></li>
             <li><a href="#managing-users">Managing Users</a></li>
             <li><a href="#database-utilization">Database Utilization</a></li>
@@ -170,9 +170,9 @@ the checks that haven been issued to the client. To retrieve the service history
 This is not guaranteed to be a unique lookup, but it almost always is.</p>
 <p>The name <strong>RChecks</strong> is short for <strong>research checks</strong>. The <strong>RChecks</strong> table was so named because checks whose disposition is unknown are said to be
 under research until their disposition is resolved. The <strong>AncientChecks</strong> table was added to relieve the overcrowding of the <strong>RChecks</strong> table.
-Originally table <strong>RChecks</strong> contained all the checks that have been issued by Operation ID. Updating this table with a batch of new checks became slow
-as the table grew. So the table was split up into 2 tables by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the
-<strong>AncientChecks</strong> table contains checks from the years 2016 and 2017.</p>
+Originally table <strong>RChecks</strong> contained all the checks that have been issued by Operation ID. The table was built by adding one year's worth of
+checks at a time, which resulted in gateay timeouts at AppHarbor as the table grew larger became larger. So the table was split up into 2 tables by years.
+Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the <strong>AncientChecks</strong> table contains checks from the years 2016 and 2017.</p>
 <p>There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
 from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as
 part of a client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed
@@ -186,7 +186,7 @@ database. To delete records a customer must request that Social Solutions do it 
 <p>The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were put
 in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would be no
 need to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a
-twice-in-a-lifetime policy, Operation ID could support a twice-in-five-years policy. This would make OPID Daily a "self-contained" website. .</p>
+twice-in-a-lifetime policy, Operation ID could support a twice-in-five-years policy. This would make OPIDDaily a self-contained website.</p>
 <p>When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a visit
 history and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can be
 generated at the front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by
@@ -203,7 +203,6 @@ always 0.) The non-ASP.NET Identity tables in the diagram are managed by a separ
 <p>The Visual Studio project OPIDDaily has 2 data contexts called IdentityDb and OpidDailyDB. (See the section Entity Framework Code First of the
 Infrastructure tab.) The technique for establishing a single connection string over 2 data contexts is described in
 <a href="https://app.pluralsight.com/player?author=scott-allen&amp;name=aspdotnet-mvc5-fundamentals-m6-ef6&amp;mode=live&amp;clip=1&amp;course=aspdotnet-mvc5-fundamentals">Scott Allen's Pluralsight video</a>.</p>
-<p>The tables belonging to data context OpidDailyDB were created at AppHarbor using a script file.  </p>
 <h2 id="adding-migrations-via-script">Adding migrations via script</h2>
 <p>To generate a script for the Up methods of the most recent migration(s), go back in the migration history to where the recent migrations start. For
 example, the migration preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the
@@ -222,15 +221,15 @@ migrations since (and not including) migration ExpressClient. It is important to
 because the deployed versions of application OPIDDaily cannot be managed by the Package Manager (PowerShell) window available in Visual Studio. The
 script to execute the Down methods must be run in SSMS. After the script has been executed, the reverted migration may be safely deleted from the set of
 migrations maintained for the data context.</p>
-<h2 id="bootstrapping-the-database-for-a-cloned-copy-of-opiddaily">Bootstrapping the Database for a Cloned Copy of OPIDDaily</h2>
+<h2 id="creating-a-cloned-copy-of-opiddaily">Creating a Cloned Copy of OPIDDaily</h2>
 <p>To create a cloned copy of OPIDDaily from the GitHub repository, supply the repository address</p>
 <pre><code> https://github.com/tmhsplb/opiddaily.git
 </code></pre>
 <p>to Visual Studio. Before running the project for the first time, use SSMS to setup a database called OpidDailyDB, as described in the
 SQL Server Express and SSMS section of the Infrastructure tab.</p>
-<p>It will be necessary to follow the instructions for creating the <strong>Invitations</strong> table given in the section titled The <strong>Staging</strong> and <strong>Training</strong> Versions of
-Application OPIDDaily on the Infrastructure tab. How to add missing migrations after the cloned copy is run for the first time is also explained in that
-section.</p>
+<p>It will be necessary to follow the instructions for creating the <strong>Invitations</strong> table given in the section titled <em>The Staging and Training Versions of
+OPIDDaily</em> on the Infrastructure tab. The missing migrations mentioned in that section can be applied to the database of the cloned version only by receiving
+an emailed copy of the referenced update-database script.</p>
 <p>It will be necessary to be made a collaborator on the project in order to commit changes in the cloned copy to the GitHub
 repository for OPIDDaily.</p>
 <h2 id="database-duplicates">Database Duplicates</h2>
@@ -296,54 +295,56 @@ This should be an affordable expense when the time comes that the additional spa
 <h2 id="rebuilding-the-research-table">Rebuilding the Research Table</h2>
 <p>In February 2020 application OPIDChecks was merged into application OPIDDaily for the sake of having a single application that performs
 both functions. The merge required the Research Table to be added to application OPIDDaily. The merger of the two applications had the additional
-benefit of allowing application OPIDDaily to use the Research Table to populate the "visit history" of clients with previous visits.</p>
+benefit of allowing application OPIDDaily to use the Research Table to populate the visit history of clients with previous visits.</p>
 <p>The Research Table was rebuilt by loading files created by two different reports in Apricot:</p>
-<pre><code>Bounded Research Report was used to create files:
-  Bounded Research Table 2017
-  Bounded Research Table 2018
-  Bounded Research Table 2019
-  Bounded Research Table 2020
+<pre><code>    The report Bounded Research Table was used to create files:
+      Bounded Research Table 2017
+      Bounded Research Table 2018
+      Bounded Research Table 2019
+      Bounded Research Table 2020
 
- Imported from Access DB was used to create files:
-   Imported from Access DB 2010
-   Imported from Access DB 2011
-   Imported from Access DB 2012
-   Imported from Access DB 2013
-   Imported from Access DB 2014
-   Imported from Access DB 2015
-   Imported from Access DB 2016
+    The report Imported from Access DB was used to create files:
+      Imported from Access DB 2010
+      Imported from Access DB 2011
+      Imported from Access DB 2012
+      Imported from Access DB 2013
+      Imported from Access DB 2014
+      Imported from Access DB 2015
+      Imported from Access DB 2016
 </code></pre>
-<p>With the exception of files</p>
-<pre><code>  Imported from Access DB 2010
-  Imported from Access DB 2011
-  Imported from Access DB 2012
-  Imported from Access DB 2013
-  Imported from Access DB 2014
+
+<p>The files</p>
+<pre><code>      Imported from Access DB 2010
+      Imported from Access DB 2011
+      Imported from Access DB 2012
+      Imported from Access DB 2013
+      Imported from Access DB 2014
+      Imported from Access DB 2015
 </code></pre>
-<p>which contain very little (and incomplete) data these files were loaded to rebuild the Research Table. See the section on the
-  Database Diagram for more information.</p>
-<p>This was a one time rebuild of the Research Table at AppHarbor. As the Research Table became large was necessary to split Files
-  of import data containing a year's worth of data into multiple files to allow the import to be processed. If the amount of data in
-  a given file was still too much, a</p>
-<pre><code>  504 Gateway Timeout Error
+
+<p>contain very little (and incomplete) data and were not loaded to rebuild the Research Table. The Research Table acutally consist of 2 tables:
+<strong>RChecks</strong> and <strong>AncientChecks</strong>. See the section on the <em>Database Diagram</em> for more information.</p>
+<p>Only the SuperAdmin user can build the database, using the Rebuild menu item on the Superadmin mneubar. Files</p>
+<pre><code>   Bounded Research Table 2018
+   Bounded Research Table 2019
+   Bounded Research Table 2020
 </code></pre>
-<p>was generated. When this happened, a new instance of OPID Daily was opened. The new instance would resume loading until completion.
-  The second instance did not generate a gateway timeout error.</p>
-<p>Moving forward, if the Research Table becomes corrupt, then it can
-  be rebuilt from scratch by regenerating and rerunning these reports. Rebuilding the Research Table from scratch takes several hours. A rebuilt
-  Research Table should not be used for 24 hours to allow for indexes to be built. Until the indexes have been built, searching the Research Table
-  will be sluggish.</p>
-<p>AppHarbor does not perform a daily backup on a free SQL Server. It is necessary to step up to a dedicated SQL Server to receive daily backups. The
-  cheapest dedicated SQL Server offers 100GB of storage space at a cost of $200/month. Either the free SQL Server or the upgrade to 10GB of storage at
-  $10/month seems preferable. For now, the Apricot database itself serves as a backup for the OPIDDaily database, since the OPIDaily database can be
-  rebuilt from the Apricot database as described.</p>
+
+<p>are loaded into table <strong>RChecks</strong> under the <em>Merge Bounded Research File</em> section and files</p>
+<pre><code>  Bounded Research Table 2017
+  Imported from Access DB 2016
+</code></pre>
+
+<p>are loaded into table <strong>AncientChecks</strong> under the <em>Merge Ancient Checks File</em> section. At the end of year 2021, there will be 6 full years of
+checks in the Research Table(s). Between now (May 2020) and then a 5 year data retention policy should be put in place. This will allow
+OPIDDaily to easily enforce a twice-in-5-years check policy without having to consult the Apricot database. The current twice-in-a-lifetime check policy
+requires consulting Apricot for checks dating back to when record keeping started and will become an unecessary burden as the years pass.</p>
 <h2 id="updating-the-opiddaily-database">Updating the OPIDDaily Database</h2>
 <p>It is necessary to keep the Research Table updated. This is done on a weekly basis by running the Apricot report
-  called OPID Daily and providing the date of the Monday beginning a week of operation after the week is complete.
-  For example the OPID Daily report should be run using Monday February 10, 2020 as the filter date on any day following
-  Thursday February 13, 2020. This will create a file containing all the records modified during the week starting on Monday February 10.</p>
-<p>If this file is created on Monday February 17, then it should be renamed as: OPIDDaily 02172020. By merging the renamed file into application
-  OPIDDaily, the Research Table will be brought up to date.</p></div>
+called OPID Daily and providing the date of the Monday beginning a week of operation after the week is complete.
+For example the OPID Daily report should be run using Monday February 10, 2020 as the filter date on any day following
+Thursday February 13, 2020. This will create a file containing all the records modified during the week starting on Monday February 10.
+By merging the created file into application OPIDDaily, the Research Table will be brought up to date.</p></div>
         </div>
 
         <footer class="col-md-12">

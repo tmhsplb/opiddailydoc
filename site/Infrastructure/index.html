@@ -97,7 +97,7 @@
             <li><a href="#git-for-windows">Git for Windows</a></li>
             <li><a href="#github">GitHub</a></li>
             <li><a href="#appharbor">AppHarbor</a></li>
-            <li><a href="#the-staging-and-training-versions-of-application-opiddaily">The Staging and Training Versions of Application OPIDDaily</a></li>
+            <li><a href="#the-staging-and-training-versions-of-opiddaily">The Staging and Training Versions of OPIDDaily</a></li>
             <li><a href="#roslyn">Roslyn</a></li>
             <li><a href="#deployment">Deployment</a></li>
             <li><a href="#jqgrid">jqGrid</a></li>
@@ -388,7 +388,7 @@ subscription level at AppHarbor.</p>
 space, which is adequate for many days of usage by Operation ID. However, the database usage must be monitored to avoid exceeding the 20MB limit.
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.</p>
-<h2 id="the-staging-and-training-versions-of-application-opiddaily">The Staging and Training Versions of Application OPIDDaily</h2>
+<h2 id="the-staging-and-training-versions-of-opiddaily">The Staging and Training Versions of OPIDDaily</h2>
 <p>A staging version of application OPIDDaily was created from a Visual Studio <strong>staging</strong> branch by creating an application called <strong>stagedaily</strong> at AppHarbor.
 DO NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.</p>
 <p>The remote configured for stagedaily at AppHarbor is:</p>
@@ -513,21 +513,20 @@ visible to a client remotely running the application, add</p>
 <p>Installation of the Elmah.Mvc package adds the necessary DLL's and makes the necessary changes to Web.config to configure ELMAH for use. By default
 ELMAH will write to a database table called ELMAH_Error. The DDL Script definition of this table is found in a
 <a href="https://elmah.github.io/downloads/">separate download</a>. Download the DDL Script for MS SQL Server from the referenced web page. The script is a .SQL
-file which may be executed as a query inside SSMS to create table ELMAH_Error.</p>
-<p>The ELMAH log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is overwritten
-when the application is deployed to AppHarbor. See the Connection String section of the Database tab.</p>
-<p>The <code>&lt;sytem.web&gt;</code> section of Web.config must configure</p>
-<pre><code>&lt;httpHandlers&gt;
-  &lt;add verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" /&gt;
-&lt;/httpHandlers&gt;
+file which may be executed as a query inside SSMS to create table ELMAH_Error and 3 stored procedures.</p>
+<p>The ELMAH log is configured by the connection string named <strong>OpidDailyConnectionString</strong> on Web.config. The <code>&lt;sytem.web&gt;</code> section of Web.config must configure</p>
+<pre><code>    &lt;httpHandlers&gt;
+      &lt;add verb=&quot;POST,GET,HEAD&quot; path=&quot;elmah.axd&quot; type=&quot;Elmah.ErrorLogPageFactory, Elmah&quot; /&gt;
+    &lt;/httpHandlers&gt;
 </code></pre>
+
 <p>and the <code>&lt;system.webServer&gt;</code> section must configure</p>
-<pre><code> &lt;handlers&gt;
-   &lt;add name="Elmah" verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" /&gt;
- &lt;/handlers&gt;
+<pre><code>     &lt;handlers&gt;
+       &lt;add name=&quot;Elmah&quot; verb=&quot;POST,GET,HEAD&quot; path=&quot;elmah.axd&quot; type=&quot;Elmah.ErrorLogPageFactory, Elmah&quot; /&gt;
+     &lt;/handlers&gt;
 </code></pre>
-<p>in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor. It is also necessary to set the connection string alias
-as described in the Connection String section of the Database tab.</p>
+
+<p>in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor.</p>
 <h2 id="log4net">log4net</h2>
 <p>Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. This package was installed using the Visual Studio NuGet
 package manager. The application log for project OPIDDaily is maintained as a database table as described in

@@ -369,7 +369,7 @@ space, which is adequate for many days of usage by Operation ID. However, the da
 See the Database Utilization section on the Database tab for how to do this. A paid subscription to a SQL Server at AppHarbor would alleviate this
 problem.
 
-## The Staging and Training Versions of Application OPIDDaily
+## The Staging and Training Versions of OPIDDaily
 A staging version of application OPIDDaily was created from a Visual Studio **staging** branch by creating an application called **stagedaily** at AppHarbor.
 DO NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.
 
@@ -527,25 +527,21 @@ to see the list of ELMAH errors.
 Installation of the Elmah.Mvc package adds the necessary DLL's and makes the necessary changes to Web.config to configure ELMAH for use. By default
 ELMAH will write to a database table called ELMAH_Error. The DDL Script definition of this table is found in a
 [separate download](https://elmah.github.io/downloads/). Download the DDL Script for MS SQL Server from the referenced web page. The script is a .SQL
-file which may be executed as a query inside SSMS to create table ELMAH_Error.
+file which may be executed as a query inside SSMS to create table ELMAH_Error and 3 stored procedures.
 
-The ELMAH log is configured by the connection string named OpidDailyConnectionString on Web.config. The value of this connection string is overwritten
-when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
-
-The `<sytem.web>` section of Web.config must configure
-
+The ELMAH log is configured by the connection string named **OpidDailyConnectionString** on Web.config. The `<sytem.web>` section of Web.config must configure
+```
     <httpHandlers>
       <add verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" />
     </httpHandlers>
-
+```
  and the `<system.webServer>` section must configure
-
+```
      <handlers>
        <add name="Elmah" verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" />
      </handlers>
-
-in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor. It is also necessary to set the connection string alias
-as described in the Connection String section of the Database tab.
+```
+in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor.
 
 ## log4net
 Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. This package was installed using the Visual Studio NuGet
