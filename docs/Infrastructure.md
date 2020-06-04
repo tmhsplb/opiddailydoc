@@ -74,15 +74,15 @@ The SQL Server Express database for OPIDDaily was created by executing the SQL q
 
 executed inside of SSMS. With this database selected in SSMS, there are two SQL queries that need to be executed to enable IIS
 to talk to SQL Server Express. The first query is
-
+````
        CREATE USER [NT AUTHORITY\NETWORK SERVICE]
        FOR LOGIN [NT AUTHORITY\NETWORK SERVICE]
        WITH DEFAULT_SCHEMA = dbo;
-
+````
 This query creates the database user NT AUTHORITY\NETWORK SERVICE. The second query is
-
+````
       EXEC sp_addrolemember 'db_owner', 'NT AUTHORITY\NETWORK SERVICE'
-
+````
 This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. Finally, go into the security
 section of database OPIDDaily in SSMS. Expand Users and select the properties for user NT AUTHORITY\NETWORK SERVICE. Select Membership
 from the Select a page section of the dialog box and tick the checkbox for db_owner. Performing this final change will permit user
@@ -544,10 +544,15 @@ The ELMAH log is configured by the connection string named **OpidDailyConnection
 in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor.
 
 ## log4net
-Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. This package was installed using the Visual Studio NuGet
-package manager. The application log for project OPIDDaily is maintained as a database table as described in
-[this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The article includes a script
-for creating table Log (renamed AppLog in application OPIDDaily). The script must be executed as a query in SSMS to create table AppLog in the database.
+Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. Logging is used primarily for reporting of detected errors
+during application execution. But logging is also very useful when trying to understand the execution of the code. Normally Visual Studio breakpoints can be
+set in the code to interrupt execution and inspect the value of variables and parameters. But as the code grows larger it becomes increasingly difficult to run
+it in Visual Studio debug mode. It is, however, always easy to insert logging statements to report on the values of variables and parameters without
+interrupting execution.
+
+The log4net package was installed using the Visual Studio NuGet package manager. The application log for project OPIDDaily is maintained as a database table as
+described in [this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The article includes a
+script for creating table Log (renamed AppLog in application OPIDDaily). The script must be executed as a query in SSMS to create table AppLog in the database.
 
 Table AppLog is created by the following script:
 

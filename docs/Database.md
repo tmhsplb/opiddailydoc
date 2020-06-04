@@ -16,6 +16,60 @@ The same connection string displayed at AppHarbor is retrieved at runtime by acc
 the OpidDailyDB on the desktop SQL Server Express. At runtime, AppHarbor will overwrite this statically configured value with the value displayed at
 AppHarbor. See the section on the Connection String on this tab.
 
+## Two Databases and a Hybrid System
+The Apricot database is intended to be the repository of all truth about clients of Operation ID. It does well with the record keeping aspects of
+a repository but falls short on two of the primary goals of the OPID Daily application:
+
+* updating of the disposition of checks in the Apricot database by processing a Quickbooks report
+* generating consolidated Service Tickets
+
+Neither of these can be accomplished by Apricot alone. The updating of check dispositions must be done through the OPID Daily application, because Apricot does
+not have the power of a general purpose programming language which is needed for this task. The generation of consolidated Service Tickets, an important
+addition to the Operation ID workflow, can also not be performed by Apricot alone. Again, it is the lack of a general purpose programming language that
+prevents Apricot from performing this task.
+
+The consequence of these 2 shortcomings of Apricot has led to Operation ID being run as a **hybrid system** between the OPID Daily application and
+the Apricot record keeping system. Each system maintains its own database and **bidirectional updating** is needed to keep the two databases in synch to
+ensure the proper functioning of Operation ID. Without going into detail, the OPID application could take over the record keeping performed by Apricot
+and become the single repository of truth about all clients of Operation ID. But it was found that Apricot could not be conveniently extended
+beyond record keeping to be the single repository it was intended to be.
+
+Apricot supports the generation of filtered reports exportable as Excel spreadsheets. In terms of database technology, an Apricot report is a database
+view, a SQL query which when executed returns a collection of records of data drawn from the underlying Apricot database. A filtered report is a database query
+which includes a SQL WHERE-clause. Filtered reports were made available to Apricot users to provide convenient windows upon the data in their Apricot
+databases and to support construction of their own custom reports based on this data.
+
+Filtered reports are also the key to initially populating and ongoingly updating the OPID Daily application to keep it in synch with the record keeping
+performed in the Apricot database. A filtered report called the Bounded Research Report was used to initially populate the OPID Daily database of checks.
+The internal database of checks in application OPID Daily is what enables the generation of Service Tickets revealing the past visit history of a client.
+The Bounded Research Report was used to create Excel spreadsheets containing a single year's worth of check data at a time. The Bounded Research Report for a
+given (past) year was consumed by the OPID Daily application to enter check data belonging to that year into the OPID Daily database.
+
+Since the construction of the database of checks from previous years, a second filtered report called the OPID Daily Report is now used to incrementally update
+the OPID Daily database with new checks that have been recorded in Apricot. The OPID Daily report makes use of the modification date stored with records in the
+Apricot database to retrieve the `delta`, that is only the records that have been modified since a specific date. The specific date supplied to the OPID Daily
+report is its filter over all modified records. If record keeping were performed inside the OPID Daily application, then this updating would be unnecessary.
+The Apricot database would only be needed to initially populate the OPID Daily database of checks.
+
+The initial population of the OPID Daily database and its incremental updating by the use of the OPID Daily Report are how the OPID Daily database is kept
+in synch by the Apricot database. Updating in the other direction is equally important. At the time that check numbers a recorded in the Apricot database,
+the disposition of those checks (whether Cleared or Voided) is yet to be determined. The determination of the disposition of a check is referred to as
+`resolving the check.` Checks are resolved by a pair of Quickbooks reports created as Excel spreadsheets after the bank used by Operation ID has reported on
+cleared checks. The first report, called the Cleared Checks Report, lists checks cleared by the bank by check number. The second report, called the Voided
+Checks Report lists by check number checks that are more than 90 days old and have been voided by Operation ID in instructions sent by Quickbooks to the bank.
+Neither the Cleared Checks Report nor the Voided Checks Report in a format that can be consumed by Apricot to update its database. Apricot is very
+stringent about the format a file must be in in order to be used to update its database.
+
+OPID Daily is used to consume the Cleared Checks Report and the Voided Checks Report to resolve checks in its own database. After resolving checks listed
+on these reports, application OPID Daily constructs an Excel spreadsheet in the stringent format required by Apricot in order to update its database. This
+spreadsheet is referred to as an `importme` file, because it is imported into Apricot through the Apricot Administrator interface.
+
+This is how the Apricot database is kept in synch with the OPID Daily database. Again, if record keeping functions were provided in OPID Daily, then keeping
+the Apricot database in synch with the OPID Daily database would not be necessary.
+
+**Bidirectional updating** is the means that has been worked out in order to realize the benefits of both Apricot and OPID Daily. This has resulted in
+a hybrid system.
+
 ## Connection String
 In the desktop environment, SSMS was used to create an empty project database by executing the SQL query
 
@@ -67,13 +121,16 @@ pasted into the Paint tool. Inside of Paint it is saved as a .PNG file. Version 
 releases have restored this capability. But the diagram seen here was created by an earlier release of SSMS, which did have the ability to create
 database diagrams.
 
-The main tables of application OPIDDaily are the tables **Clients**, **Visits**, **RChecks** and **AncientChecks**, The table **Clients** stores
-clients, their service requests and their supporting documents, and this is the reason that table **Clients** has so many data fields. Some of this data
+The main tables of application OPIDDaily are the tables **Clients**, **Visits**, **TextMsgs**, **RChecks** and **AncientChecks**. The table **Clients** stores
+clients, their service requests and their supporting documents. This is the reason that table **Clients** has so many data fields. Some of this data
 could have been factored out by the use of many-to-many relationship tables, but it was decided that a single table would be simpler. Notice that
 many of the data fields in table **Clients** are bit fields. As a result, a record in the table does not consume much database storage.
 
 The table **Visits** is related to the **Clients** table by the foreign key Id as there is a one-to-many relationship between a client and the visits
-he/she has made to Operation ID. The table **RChecks**
+he/she has made to Operation ID. Similarly, the table **TextMsgs** is related to the **Clients** table by the foreign key Id as there is a one-to-many
+relationship between a client and the messages that have been written concerning the client.
+
+The table **RChecks**
 is used to store check data. It is referenced to the **Clients** table by the RecordID and InterviewRecordID data fields. These two data fields identify
 a client in the Apricot database together with a particular visit the client has made to Operation ID. The service history of a client consists of
 the checks that haven been issued to the client. To retrieve the service history from the table **RChecks** the client is looked up by last name and DOB.
@@ -81,16 +138,18 @@ This is not guaranteed to be a unique lookup, but it almost always is.
 
 The name **RChecks** is short for **research checks**. The **RChecks** table was so named because checks whose disposition is unknown are said to be
 under research until their disposition is resolved. The **AncientChecks** table was added to relieve the overcrowding of the **RChecks** table.
-Originally table **RChecks** contained all the checks that have been issued by Operation ID. The table was built by adding one year's worth of
-checks at a time, which resulted in gateay timeouts at AppHarbor as the table grew larger became larger. So the table was split up into 2 tables by years.
-Currently the **RChecks** table contains checks from the years 2018-2020 and the **AncientChecks** table contains checks from the years 2016 and 2017.
+It hs exactly the same data fields as table **RChecks**. Originally table **RChecks** contained all the checks that have been issued by Operation ID. The table
+was built by adding one year's worth of
+checks at a time, which resulted in gateway timeouts at AppHarbor during update operations as the table grew larger. So the table was split up into 2 tables
+by years. Currently the **RChecks** table contains checks from the years 2018-2020 and the **AncientChecks** table contains checks from the years 2016 and 2017.
 
 There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
 from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as
 part of a client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed
 that clients from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment of
-the OPIDDaily website is given 20MB of data space on a shared SQL Server. The stored check data consumes 15.2MB of the free space on the shared SQL
-Server. Adding the checks from the years 2013-2015 would nearly fill up the free 20MB.
+the OPIDDaily website is given 20MB of data space on a shared SQL Server. According to the SSMS Disk Usage report, 12.31MB of the current 15.25MB allocated
+data space is in use. Thus, 80% of the current allocation is in use and only 61% of the allowed 20MB allocation is in use. So there is still adequate
+free space for more check data.
 
 At some point it will be useful to reconsider the twice-in-a-lifetime policy for client service. Ten years from now it is unlikely that clients from
 fifteen years in the past will come to Operation ID seeking service. So there is no advantage to storing checks from the distant past. A data retention
@@ -110,7 +169,9 @@ determined in the back office by consulting the Quickbooks ledger. The inconveni
 20MB free limit of data storage at AppHarbor.
 
 The table **ELMAH_Error** stores error messages generated by uncaught application errors. See the section on ELMAH on the Infrastructure tab. The table
-**AppLog** contains the log messages generated by the application using log4net. See the section on log4net on the Infrastructure tab.
+**AppLog** contains the log messages generated by the application using log4net. See the section on log4net on the Infrastructure tab. The
+**_MigrationHistory** table stores the Entity Framework Code First migrations that have been applied to the database. This table is defined by and
+managed by Entity Framework Code First.
 
 The 3 AspNet tables in the center the above diagram are created by ASP.NET Identity 2.0 to manage registered users of OPIDDaily. The 3 tables are
 managed by their own data context which cannot be augmented by additional tables.  However, data fields can be added to table **AspNetUsers** if

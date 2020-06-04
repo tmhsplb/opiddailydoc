@@ -197,20 +197,54 @@ The first of the 2 packages adds folders:
 The packages should be loaded in the given order.
 
 ## NowServing
-By convention, wherever the code makes use of a variable with the name nowServing, its value is the id of a client that has been selected from a jqGrid.
-Understanding this convention greatly simplifies understanding the code base. For example,
-when a row in the clientsGrid defined on FrontDeskClients.cshtml is selected, the JavaScript function that is the value of the onSelectRow property of
-the grid is invoked. When the function is invoked, the value passed to its nowServing argument is the id associated with the client represented by the
-selected row. The function posts to the server side method NowServing of the FrontDeskController (found on SharedController) via the code
+By convention, wherever the code makes use of a variable with the name `nowServing`, its value is the id of a client that has been
+selected from a jqGrid. Understanding this convention greatly simplifies understanding the code base.  When a row is selected from a
+client grid or dashboard the id of the selected row is the id of the client referred to by the row. This id is stored in the session context
+for ease access by any method in the code. This technique eliminates the need to pass the id as an argument to each method that needs it.
+It is in effect a means of managing session state across pages in the OPID Daily website in the same way that cookies are designed to manage
+state across web pages in a large website. See the **NowConversing** section for additional details.
 
-    Url.Action("NowServing", "FrontDesk")
-
-passing the JavaScript variable nowServing in the post as a result of the line
+## NowConversing
+When a row in the clientsGrid defined on FrontDeskClients.js is selected, the JavaScript function that is the value of the
+onSelectRow property of the grid is invoked. When the function is invoked, the value passed to its `nowServing` argument is the id
+associated with the client represented by the selected row.  The function posts to the server side method NowConversing found on SharedController,
+passing the JavaScript variable `nowServing` in the post as a result of the line
 
     postData: { nowServing: nowServing }
 
-Method SharedController/NowServing has an optional argument called nowServing. MVC data binding will cause this variable to be bound to the JavaScript
-variable in the post.
+Method SharedController/NowConversing has an argument called nowServing. MVC data binding will cause this variable to be
+bound to the JavaScript variable in the post.
+
+The method NowConversing was originally called NowServing, but was changed when it was understood that it needs to return a
+JsonResult to the grid in order to support pagination. The name NowConversing was chose, because the call frequently initiates
+a conversation between two OPID Daily users. The JsonResult returned by NowConversing is the set of records that are the
+current focus of the jqGrid. When the JsonResult is returned, the code
+````
+    .trigger('reloadGrid', { fromServer: true });
+````
+chained to the call to NowConversing then forces the grid to reload with the grid data records in the JsonResult.
+
+It would be natural to follow this chained call by a call to set the selection:
+````
+    .trigger('reloadGrid', { fromServer: true }).jqGrid('setSelection', nowServing);
+````
+
+but this DOES NOT WORK. Instead, it is necessary to wait for the reload to complete before the selection is set.
+````
+    loadComplete: function () {
+      jquery("#dashboardGrid").jqGrid('setSelection', lastServed);
+    }
+````
+The global JavaScript variable `lastServed` referenced here is set to the value of `nowServing`.
+
+There is a complicated interplay between the server side and the client side regarding the selection of a client
+being served. This interplay is at the heart of how the OPIDDaily application works. For this reason it is important
+to study method NowConversing and the several jqGrids which call it.
+
+One thing that will be noticed is that the JsonResult returned by method NowConversing depends upon wheter it is being
+called by an agency or by OPID. If it is being called by OPID, it returns records for a dashboard display, which may
+include records from clients being served by several different agencies. When it is called by an agency, the JsonResult
+includes only records from clients being served by that agency.
 
 ## Households
 Table **Clients** is a list of clients and their dependents. Most clients represent only themselves but some have dependents. A client together with any
@@ -220,29 +254,15 @@ the setting D.HH = C.Id. In fact, dependent D belongs to a subgrid of the jqGrid
 render the **Clients** table. Dependent D is added to the subgrid whose parent entry is the entry for client C. If client C is has dependents, then
 C.HeadOfHousehold will be set to true and the row rendering client C in the jqGrid will indicate that client C is the head of a household.
 
-## Messaging and Color Coding
-In the same-day-service model of Operation ID, clients would occasionally return checks that had been issued to them. A check was generally returned for
-one of two reasons: either the check had expierd or it was issued for the wrong amount. Either of these reasons for needing to return a check may occur
-under the remote operations model of Operation ID. To support this a primitive messaging system has been developed to allow the Back Office at Operation
-ID to communicated with a case manager via in application text messages.
-
-If a check visible in a client's check history needs to be returned, the client's case manager may initiate a text message exchange with the Back office
-by expandng the plus sign (+) next to the check to open up a message subgrid. Clicking the add button (+) on this subgrid will allow the case manager to
-create a message to send to the Back Office. When the message is saved, it will appear in red in the subgrid and the client's row will appear in red
-in the clients grid. The red row in the case manager's grid indicates that he/she is waiting for a reply. The green row in the Back Office dashboard
-indicates that a message has been received.
-
-When the Back Office highlights a client's green row on the dashboard and then selects Service Request from the menubar this will cause the client's check
-history  to appear. A check on this history that is highlighted in green indicates that it has a message waiting. To see the message, the Back Office will
-expand the plus sign (+) to open up a subgrid of messages. This will expose a message sent by a case manager.
-
-The Back Office may reply to the message by clicking the add button (+) on the subgrid. The entered message will appear in red in the
-subgrid upon saving and the client's row in the dashboard will be highlighted in red. This signifies that the Back Office has replied to the
-message sent by the case manager and is now waiting for a reply, if any is needed.
-
-There is one additional form of messaging available only to the Back Office. This messaging causes a client's row to turn blue on both the Back Office
-dashboard and a case manager's clients grid when the stage of a client turns to either CheckedIn of BackOffice. This let's the case manager know that
-action is being taken at Operation ID.
+## Conversations
+The OPID Daily application supports conversations between users through a sequence of text messages. There is a one-to-many relationship
+between each client and the messages concerning that client. Selecting a client from a client grid causes the conversation
+of text messages to open. Each message is tagged with a date, a sender and a receiver. The entire conversation is stored
+in the table **TextMsgs** which uses a client Id as a foreign key. (See the database diagram on the Database tab.). When a client
+is selected from a grid and a text message is sent, the client's row in the grid turns red, indicating waiting on receipt of a reply.
+The recipient of the message sees the row representing the client in the grid he/she is monitoring turn green, indicating that a
+message is waiting to be read. This simple mechanism enables communication between users of OPID Daily without the need for time consuming
+phone calls or difficult to manage emails.
 
 ## The AgencyId data field in table **AspNetUsers**
 Application OPIDDaily is used by users at Operation ID and by users representing agencies that refer clients to
@@ -311,13 +331,13 @@ Application OPIDDaily uses version 2.4.1 of Microsoft's SignalR framework for re
 manager. SignalR is a push-technology used by OPIDDaily to update displays without requiring a page refresh.
 
 The SignalR connection hub is defined on file DAL/DailyHub.cs. Invoking a method of DailyHub in the server side code causes a push-notification to
-go out to all clients registered to the hub. For example, when a front desk admin adds a new client to the jqGrid managed by the FrontDeskController
-(view Clients.cshtml), the method SharedController.AddClient will invoke method DailyHub.Refresh. This method executes
+go out to all clients registered to the hub. For example, when a case manager adds a new client to the jqGrid managed by the CaseManagerController
+the method CaseManagerController.AddMyClient will invoke method DailyHub.Refresh. This method executes
 
     hubContext.Clients.All.refreshPage();
 
-which sends a push notification to all registered clients of the hub. The registered clients include all other users logged in as front desk
-admins. They will each see their view Clients.cshtml update without the need to refresh that view. In this way all grids are kept in synch with the grid
+which sends a push notification to all registered clients of the hub. The registered clients include all other users logged in any role. They will each
+see their view dashbords update without the need to refresh the dashboard. In this way all grids are kept in synch with the grid
 to which the client was added.
 
 SignalR is also used as the means to update a progress bar display used when processing external Excel files containing check data.
