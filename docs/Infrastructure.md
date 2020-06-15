@@ -28,7 +28,7 @@ the following robots.txt file
 
 This directs all search engines to ignore the entire site.
 
-## Visual Studio Project
+### Visual Studio Project
 To check out application OPIDDaily from GitHub into Visual Studio 2019 (Community Edition), clone
 
      https://tmhsplb@appharbor.com/opiddaily.git
@@ -212,37 +212,73 @@ to two database columns, ReferralDate and AppearanceDate, which are not in the c
 
 was used to remove these columns when it was realized they would not be needed.
 
-The second entity to be added to project OPIDDaily was the class Entities\Visit.cs. This entity was connected to the OPIDDaily data context by the
+Late in the development of OPIDDaily it was realized that the table **Visits** was not needed. Table **Visits** had been created when
+````
+  public DbSet<Visit> Visits { get; set; }
+````
+was added to DataContexts\OpidDailyDB.cs and class Entities\Visit.cs was added to the set of database entities. Table **Visits** was then created
+by the Up method of migration
+````
+    201907120006570_History.cs
+````
+A new migration was created To delete table **Visits** from the database when it was realized that it was not needed. First the reference to
+the table was removed from DataContexts\OpidDailyDB.cs:
+````
+    // public DbSet<Visit> Visits { get; set; }
+````
+and all references to entity Visit were removed from the code. After re-compilation of the codebase, the command
+```
+   PM> add-migration -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration "DeleteVisitsTable"
+```
+was run. The Up method of the resulting migration showed
+````
+  public override void Up()
+  {
+      DropForeignKey("dbo.Visits", "Client_Id", "dbo.Clients");
+      DropIndex("dbo.Visits", new[] { "Client_Id" });
+      DropTable("dbo.Visits");
+   }
+````
+This method indicates that the table Visits will be removed from the database together with its foreign key relationship to table **Clients**.
+Running the command
+````
+   PM> update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration
+````
+then removed table **Visits** from the database as desired. Notice that this is not the same procedure as running the Down method of migration
+````
+  201907120006570_History.cs
+````
+because running this Down method of this migration would invalidate all the migrations performed after it.
+
+Late in the development of OPIDDaily the entity Entities\TextMsg.cs was added. This entity was connected to the OPIDDaily data context by the
 inclusion of the declaration
 
-    public DbSet<Visit> Visits { get; set; }
+    public DbSet<TextMsg> TextMsgs { get; set; }
 
 on file DataContexts\OpidDailyDB.cs.
 
-Since table **Visits** was intended to be related to table **Clients** in the OPIDDailyDB by a foreign key, the declaration
+Since table **TextMsgs** was intended to be related to table **Clients** in the OPIDDailyDB by a foreign key, the declaration
 
-    public ICollection<Visit> Visits { get; set; }
+    public ICollection<TextMsg> TextMsgs { get; set; }
 
-was added to class Entities\Client.cs. Entity Framework Code First automatically detected this when the "History" migration (described next)
-was created.
-
-Running the PowerShell command
-
-    PM> add-migration -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration "History"
-
-then caused the migration
-
-    2019071220006570_History.cs
-
-to be added to folder DataContexts\OPIDDailyMigrations. Studying the Up method of this migration, it is seen that the new table Visits to
+was added to class Entities\Client.cs. Entity Framework Code First automatically detected this when the "Conversations" migration
+was created. Running the PowerShell command
+````
+    PM> add-migration -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration "Conversations"
+````
+caused the migration
+````
+    202005152029597_Conversations.cs
+````
+to be added to folder DataContexts\OPIDDailyMigrations. Studying the Up method of this migration, it is seen that the new table **TextMsgs** to
 be created will have a foreign key relationship to table **Clients**.
 
 Running the PowerShell command
 
     PM> update-database -ConfigurationTypeName OPIDDaily.DataContexts.OPIDDailyMigrations.Configuration
 
-then caused table Visits to be created in database OPIDDailyDB by executing the Up method of the above migration. As desired, table **Visits**
-has a foreign key relationship to table **Clients**. To see this, use SSMS to study the columns of table **Visits**.
+then caused table **TextMsgs** to be created in database OPIDDailyDB by executing the Up method of the above migration. As desired, table **TextMsgs**
+has a foreign key relationship to table **Clients**. To see this, use SSMS to study the columns of table **TextMsgs**.
 
 Each additional database change requires a pair of commands: an add-migration command followed by an update-database command.
 Executing an add-migration command creates a .cs file in the folder associated with the ConfigurationTypeName. Study this .cs file before executing the
@@ -252,8 +288,8 @@ update-database command and then try again.
 See the section on the Database tab on using PowerShell to create script files to execute at AppHarbor.
 
 ## Configuring IIS
-Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match the
-deployment environment at AppHarbor as closely as possible.
+Development of the OPIDDaily application was performed under IIS on the localhost machine. This was done so that the development environment would match
+thedeployment environment at AppHarbor as closely as possible.
 
 The localhost application server, Internet Information Services (IIS), was not pre-installed on the localhost; however, it is part of the operating system that
 can easily be activated. To activate IIS, go to the Programs section of the Control Panel and turn on the IIS feature:
@@ -375,7 +411,7 @@ DO NOT CREATE A SEPARATE REPOSITORY FOR STAGEDAILY AT GITHUB.
 
 The remote configured for stagedaily at AppHarbor is:
 
-    https://tmhsplbt@appharbor.com/stagedaily.git
+    https://tmhsplb@appharbor.com/stagedaily.git
 
 This remote is configured from a Windows Git BASH shell by the command
 
@@ -545,14 +581,15 @@ in order for ELMAH to log both on the local IIS and on the remote server at AppH
 
 ## log4net
 Application logging is handled by Version 2.0.8 of log4net by the Apache Software Foundation. Logging is used primarily for reporting of detected errors
-during application execution. But logging is also very useful when trying to understand the execution of the code. Normally Visual Studio breakpoints can be
-set in the code to interrupt execution and inspect the value of variables and parameters. But as the code grows larger it becomes increasingly difficult to run
-it in Visual Studio debug mode. It is, however, always easy to insert logging statements to report on the values of variables and parameters without
-interrupting execution.
+during application execution. But logging is also very useful when trying to understand the execution of the code. Normally Visual Studio breakpoints
+can be set in the code to interrupt execution and inspect the value of variables and parameters. But as the code grows larger it becomes increasingly
+difficult to run it in Visual Studio debug mode. It is, however, always easy to insert logging statements to report on the values of variables and
+parameters without interrupting execution.
 
-The log4net package was installed using the Visual Studio NuGet package manager. The application log for project OPIDDaily is maintained as a database table as
-described in [this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The article includes a
-script for creating table Log (renamed AppLog in application OPIDDaily). The script must be executed as a query in SSMS to create table AppLog in the database.
+The log4net package was installed using the Visual Studio NuGet package manager. The application log for project OPIDDaily is maintained as a database
+table as described in [this article](https://logging.apache.org/log4net/release/config-examples.html) describing the AdoNetAppender for log4net. The
+article includes a script for creating table Log (renamed AppLog in application OPIDDaily). The script must be executed as a query in SSMS to create
+table AppLog in the database.
 
 Table AppLog is created by the following script:
 

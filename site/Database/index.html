@@ -91,7 +91,7 @@
             <li><a href="#two-databases-and-a-hybrid-system">Two Databases and a Hybrid System</a></li>
             <li><a href="#connection-string">Connection String</a></li>
             <li><a href="#database-diagram">Database Diagram</a></li>
-            <li><a href="#adding-migrations-via-script">Adding migrations via script</a></li>
+            <li><a href="#adding-migrations-at-appharbor-via-script">Adding migrations at AppHarbor via script</a></li>
             <li><a href="#backing-out-migrations-via-script">Backing out migrations via script</a></li>
             <li><a href="#creating-a-cloned-copy-of-opiddaily">Creating a Cloned Copy of OPIDDaily</a></li>
             <li><a href="#database-duplicates">Database Duplicates</a></li>
@@ -204,42 +204,46 @@ desktop version.</p>
 pasted into the Paint tool. Inside of Paint it is saved as a .PNG file. Version 18.0 of SSMS does not allow database diagrams to be created. Newer
 releases have restored this capability. But the diagram seen here was created by an earlier release of SSMS, which did have the ability to create
 database diagrams.</p>
-<p>The main tables of application OPIDDaily are the tables <strong>Clients</strong>, <strong>Visits</strong>, <strong>TextMsgs</strong>, <strong>RChecks</strong> and <strong>AncientChecks</strong>. The table <strong>Clients</strong> stores
+<p>The main tables of application OPIDDaily are the tables <strong>Clients</strong>, <strong>TextMsgs</strong>, <strong>RChecks</strong> and <strong>AncientChecks</strong>. The table <strong>Clients</strong> stores
 clients, their service requests and their supporting documents. This is the reason that table <strong>Clients</strong> has so many data fields. Some of this data
 could have been factored out by the use of many-to-many relationship tables, but it was decided that a single table would be simpler. Notice that
 many of the data fields in table <strong>Clients</strong> are bit fields. As a result, a record in the table does not consume much database storage.</p>
-<p>The table <strong>Visits</strong> is related to the <strong>Clients</strong> table by the foreign key Id as there is a one-to-many relationship between a client and the visits
-he/she has made to Operation ID. Similarly, the table <strong>TextMsgs</strong> is related to the <strong>Clients</strong> table by the foreign key Id as there is a one-to-many
+<p>The table <strong>TextMsgs</strong> is related to the <strong>Clients</strong> table by the foreign key Id as there is a one-to-many
 relationship between a client and the messages that have been written concerning the client.</p>
-<p>The table <strong>RChecks</strong>
-is used to store check data. It is referenced to the <strong>Clients</strong> table by the RecordID and InterviewRecordID data fields. These two data fields identify
-a client in the Apricot database together with a particular visit the client has made to Operation ID. The service history of a client consists of
-the checks that haven been issued to the client. To retrieve the service history from the table <strong>RChecks</strong> the client is looked up by last name and DOB.
-This is not guaranteed to be a unique lookup, but it almost always is.</p>
+<p>The table <strong>RChecks</strong> is used to store check data from Apricot. The RecordIID and InterviewRecordID  data fields identify a client in the Apricot
+database and a particular visit the client has made to Operation ID. The service history of a client consists of the checks that have been issued to the
+client. To retrieve the service history from the table <strong>RChecks</strong> the client is looked up by last name and DOB. This is not guaranteed to be a unique
+lookup, but it almost always is.</p>
 <p>The name <strong>RChecks</strong> is short for <strong>research checks</strong>. The <strong>RChecks</strong> table was so named because checks whose disposition is unknown are said to be
 under research until their disposition is resolved. The <strong>AncientChecks</strong> table was added to relieve the overcrowding of the <strong>RChecks</strong> table.
-It hs exactly the same data fields as table <strong>RChecks</strong>. Originally table <strong>RChecks</strong> contained all the checks that have been issued by Operation ID. The table
-was built by adding one year's worth of
-checks at a time, which resulted in gateway timeouts at AppHarbor during update operations as the table grew larger. So the table was split up into 2 tables
-by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the <strong>AncientChecks</strong> table contains checks from the years 2016 and 2017.</p>
+It has exactly the same data fields as table <strong>RChecks</strong>. Originally table <strong>RChecks</strong> contained all the checks that have been issued by Operation ID.
+The table was built by adding one year's worth of checks at a time, which resulted in gateway timeouts at AppHarbor during update operations as the table
+grew larger. So the table was split up into 2 tables by years. Currently the <strong>RChecks</strong> table contains checks from the years 2018-2020 and the
+<strong>AncientChecks</strong> table contains checks from the years 2016 and 2017.</p>
+<p>The <strong>PocketChecks</strong> table was added in June 2020 to provide a means of entering check data directly into OPID Daily instead of having to wait for checks
+to be imported from Apricot. A pocket check is created when adding a new check to the visit history of an existing client or when adding a new check to
+an express client. Only users in role Interviewer or Back Office can create a pocket check. A pocket check is marked as active when it is first
+created and is marked inactive when a check with the same check number is imported from Apricot. Pocket checks enable a seamless transition to operations
+under OPID Daily alone. Once imports from Apricot are no longer performed the checks in the <strong>RChecks</strong> and <strong>AncientChecks</strong> tables will eventually be
+older than the data retention guidelines.</p>
 <p>There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
 from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as
 part of a client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed
-that clients from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment of
-the OPIDDaily website is given 20MB of data space on a shared SQL Server. According to the SSMS Disk Usage report, 12.31MB of the current 15.25MB allocated
-data space is in use. Thus, 80% of the current allocation is in use and only 61% of the allowed 20MB allocation is in use. So there is still adequate
-free space for more check data.</p>
+that clients from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment
+of the OPIDDaily website is given 20MB of data space on a shared SQL Server. According to the SSMS Disk Usage report, 12.31MB of the current 15.25MB
+allocated data space is in use. Thus, 80% of the current allocation is in use and only 61% of the allowed 20MB allocation is in use. So there is still
+adequate free space for more check data.</p>
 <p>At some point it will be useful to reconsider the twice-in-a-lifetime policy for client service. Ten years from now it is unlikely that clients from
 fifteen years in the past will come to Operation ID seeking service. So there is no advantage to storing checks from the distant past. A data retention
 policy should be formulated to purge the database of old records. Social Solutions does not allow customers to delete records from their own Apricot
 database. To delete records a customer must request that Social Solutions do it for them.</p>
-<p>The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were put
-in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would be no
-need to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a
+<p>The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were
+put in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would
+be no need to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a
 twice-in-a-lifetime policy, Operation ID could support a twice-in-five-years policy. This would make OPIDDaily a self-contained website.</p>
-<p>When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a visit
-history and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can be
-generated at the front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by
+<p>When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a
+visit history and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can
+be generated at the front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by
 consulting the Apricot database. In most cases, the checks from visits prior to 2015 will not include a disposition and their disposition will need to be
 determined in the back office by consulting the Quickbooks ledger. The inconvenience of this is outweighed by its rarity and the desire to stay below the
 20MB free limit of data storage at AppHarbor.</p>
@@ -255,7 +259,7 @@ always 0.) The non-ASP.NET Identity tables in the diagram are managed by a separ
 <p>The Visual Studio project OPIDDaily has 2 data contexts called IdentityDb and OpidDailyDB. (See the section Entity Framework Code First of the
 Infrastructure tab.) The technique for establishing a single connection string over 2 data contexts is described in
 <a href="https://app.pluralsight.com/player?author=scott-allen&amp;name=aspdotnet-mvc5-fundamentals-m6-ef6&amp;mode=live&amp;clip=1&amp;course=aspdotnet-mvc5-fundamentals">Scott Allen's Pluralsight video</a>.</p>
-<h2 id="adding-migrations-via-script">Adding migrations via script</h2>
+<h2 id="adding-migrations-at-appharbor-via-script">Adding migrations at AppHarbor via script</h2>
 <p>To generate a script for the Up methods of the most recent migration(s), go back in the migration history to where the recent migrations start. For
 example, the migration preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the
 command</p>

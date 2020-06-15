@@ -121,49 +121,54 @@ pasted into the Paint tool. Inside of Paint it is saved as a .PNG file. Version 
 releases have restored this capability. But the diagram seen here was created by an earlier release of SSMS, which did have the ability to create
 database diagrams.
 
-The main tables of application OPIDDaily are the tables **Clients**, **Visits**, **TextMsgs**, **RChecks** and **AncientChecks**. The table **Clients** stores
+The main tables of application OPIDDaily are the tables **Clients**, **TextMsgs**, **RChecks** and **AncientChecks**. The table **Clients** stores
 clients, their service requests and their supporting documents. This is the reason that table **Clients** has so many data fields. Some of this data
 could have been factored out by the use of many-to-many relationship tables, but it was decided that a single table would be simpler. Notice that
 many of the data fields in table **Clients** are bit fields. As a result, a record in the table does not consume much database storage.
 
-The table **Visits** is related to the **Clients** table by the foreign key Id as there is a one-to-many relationship between a client and the visits
-he/she has made to Operation ID. Similarly, the table **TextMsgs** is related to the **Clients** table by the foreign key Id as there is a one-to-many
+The table **TextMsgs** is related to the **Clients** table by the foreign key Id as there is a one-to-many
 relationship between a client and the messages that have been written concerning the client.
 
-The table **RChecks**
-is used to store check data. It is referenced to the **Clients** table by the RecordID and InterviewRecordID data fields. These two data fields identify
-a client in the Apricot database together with a particular visit the client has made to Operation ID. The service history of a client consists of
-the checks that haven been issued to the client. To retrieve the service history from the table **RChecks** the client is looked up by last name and DOB.
-This is not guaranteed to be a unique lookup, but it almost always is.
+The table **RChecks** is used to store check data from Apricot. The RecordIID and InterviewRecordID  data fields identify a client in the Apricot
+database and a particular visit the client has made to Operation ID. The service history of a client consists of the checks that have been issued to the
+client. To retrieve the service history from the table **RChecks** the client is looked up by last name and DOB. This is not guaranteed to be a unique
+lookup, but it almost always is.
 
 The name **RChecks** is short for **research checks**. The **RChecks** table was so named because checks whose disposition is unknown are said to be
 under research until their disposition is resolved. The **AncientChecks** table was added to relieve the overcrowding of the **RChecks** table.
-It hs exactly the same data fields as table **RChecks**. Originally table **RChecks** contained all the checks that have been issued by Operation ID. The table
-was built by adding one year's worth of
-checks at a time, which resulted in gateway timeouts at AppHarbor during update operations as the table grew larger. So the table was split up into 2 tables
-by years. Currently the **RChecks** table contains checks from the years 2018-2020 and the **AncientChecks** table contains checks from the years 2016 and 2017.
+It has exactly the same data fields as table **RChecks**. Originally table **RChecks** contained all the checks that have been issued by Operation ID.
+The table was built by adding one year's worth of checks at a time, which resulted in gateway timeouts at AppHarbor during update operations as the table
+grew larger. So the table was split up into 2 tables by years. Currently the **RChecks** table contains checks from the years 2018-2020 and the
+**AncientChecks** table contains checks from the years 2016 and 2017.
+
+The **PocketChecks** table was added in June 2020 to provide a means of entering check data directly into OPID Daily instead of having to wait for checks
+to be imported from Apricot. A pocket check is created when adding a new check to the visit history of an existing client or when adding a new check to
+an express client. Only users in role Interviewer or Back Office can create a pocket check. A pocket check is marked as active when it is first
+created and is marked inactive when a check with the same check number is imported from Apricot. Pocket checks enable a seamless transition to operations
+under OPID Daily alone. Once imports from Apricot are no longer performed the checks in the **RChecks** and **AncientChecks** tables will eventually be
+older than the data retention guidelines.
 
 There exist checks going back to the year 2013 when a Microsoft Access database was used to manage clients; however, the disposition of checks
 from these early years was not stored along with the check numbers in the Access database. These check numbers were migrated to the Apricot database as
 part of a client's service history, but the check numbers from the years 2013-2015 were not entered into the OPIDDaily database because it was believed
-that clients from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment of
-the OPIDDaily website is given 20MB of data space on a shared SQL Server. According to the SSMS Disk Usage report, 12.31MB of the current 15.25MB allocated
-data space is in use. Thus, 80% of the current allocation is in use and only 61% of the allowed 20MB allocation is in use. So there is still adequate
-free space for more check data.
+that clients from these years would rarely return to Operation ID. This has saved valuable storage space in the OPIDDaily database. The free deployment
+of the OPIDDaily website is given 20MB of data space on a shared SQL Server. According to the SSMS Disk Usage report, 12.31MB of the current 15.25MB
+allocated data space is in use. Thus, 80% of the current allocation is in use and only 61% of the allowed 20MB allocation is in use. So there is still
+adequate free space for more check data.
 
 At some point it will be useful to reconsider the twice-in-a-lifetime policy for client service. Ten years from now it is unlikely that clients from
 fifteen years in the past will come to Operation ID seeking service. So there is no advantage to storing checks from the distant past. A data retention
 policy should be formulated to purge the database of old records. Social Solutions does not allow customers to delete records from their own Apricot
 database. To delete records a customer must request that Social Solutions do it for them.
 
-The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were put
-in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would be no
-need to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a
+The SuperAdmin user of the OPID Daily website has the ability to delete a year's worth of checks at a time. If a data retention policy of 5 years were
+put in place, then the OPID Daily website would easily be able to enforce it. Furthermore, it would simplify part of the user interface as there would
+be no need to consult Apricot for information not in the OPID Daily database: all the check data for the past 5 years could be stored. And instead of a
 twice-in-a-lifetime policy, Operation ID could support a twice-in-five-years policy. This would make OPIDDaily a self-contained website.
 
-When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a visit
-history and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can be
-generated at the front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by
+When a client appears for service, a check is first made in the Apricot database to see if the client has a visit history. If the client does have a
+visit history and this history does not include any checks before the year 2016, then a Service Ticket including all previous service for the client can
+be generated at the front desk. If a client's visit history includes visits prior to 2016, then these visits will be included on the Service Ticket by
 consulting the Apricot database. In most cases, the checks from visits prior to 2015 will not include a disposition and their disposition will need to be
 determined in the back office by consulting the Quickbooks ledger. The inconvenience of this is outweighed by its rarity and the desire to stay below the
 20MB free limit of data storage at AppHarbor.
@@ -183,7 +188,7 @@ The Visual Studio project OPIDDaily has 2 data contexts called IdentityDb and Op
 Infrastructure tab.) The technique for establishing a single connection string over 2 data contexts is described in
 [Scott Allen's Pluralsight video](https://app.pluralsight.com/player?author=scott-allen&name=aspdotnet-mvc5-fundamentals-m6-ef6&mode=live&clip=1&course=aspdotnet-mvc5-fundamentals).
 
-## Adding migrations via script
+## Adding migrations at AppHarbor via script
 To generate a script for the Up methods of the most recent migration(s), go back in the migration history to where the recent migrations start. For
 example, the migration preceding the migration ExpressClient was the migration PXXA. Therefore, to get a script for migration ExpressClient, execute the
 command

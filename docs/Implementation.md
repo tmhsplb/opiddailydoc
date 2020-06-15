@@ -1,26 +1,68 @@
 # Implementation
 Application OPIDDaily is implemented as an ASP.NET Framework application using the ASP.NET MVC 5 project template provided by Visual Studio 2019
-(Community Edition). It uses ASP.NET Identity 2.0 to define a  set of user roles. Each user role is associated with a separate MVC controller.
-Controller inheritance is used to share editing functionality across user roles.
+(Community Edition).  OPIDDaily is implemented as an ASP.NET Foundation application and as such is hosted by IIS. Since cross platform availability
+is not a goal of  OPIDDaily, there is no need to port it to ASP.NET Core. However, it may be useful to provide an alternative to AppHarbor as a hosting
+service.
 
-It may be useful to upgrade application OPIDDaily to use the more modern ASP.NET Core technology. It may also be useful to provide an alternative to the
-free hosting service AppHarbor, which is currently used by OPIDDaily. See the AppHarbor section of the Infrastructure tab for details on this.
+OPIDDaily uses ASP.NET Identity 2.0 to define a set of user roles. Each user role is associated with a separate MVC controller.
+A key feature is the use of controller inheritance (see the SharedController section below) to share editing functionality across user roles.
+Most of the OPIDaily interface is built around the JavaScript component jqGrid. This component provides a powerful user interface for CRUD operations,
+relieving the application of the burden of providing such an interface. (See the 2 sections on the jqGrid and the dashboard below.)
 
-The graphical user interface of OPIDDaily is built using Bootstrap 3.0.0. Each user role is associated with its own layout file which defines a
+The graphical user interface of OPIDDaily is styled using Bootstrap 3.0.0. Each user role is associated with its own layout file which defines a
 Bootstrap navbar containing links to the OPIDDaily features available to users in the role. The ASP.NET Identity system ensures that a user in a
 specified role cannot visit any pages outside of those allowed to users in that role. (See the section on Role Controllers.)
 
-Because of its use of SignalR, application OPIDDaily will always require a server side component. See the section on
-SignalR on this tab for a discussion of this.
+Broadcast communication in OPIDDaily is made possible by the use of SignalR.
 
+## Architecture
+Application OPIDDaily uses the well-defined architecture of an MVC application. The presentation layer is defined by the collection of controllers
+and corresponding views.
+
+#### Models
+The Models folder contains the models used by application OPIDDaily. Each model name with suffix ViewModel is a view model used to pass data from
+a controller to a view.
+
+#### Data Access Layer
+The collection of classes in the DAL folder comprise the data access layer. Controllers retrieve database data by invoking
+methods of the classes in the data access layer. The data access layer contains many methods that convert back and forth between
+entities and view models. For example, method ClientEntityToClientViewModel returns a ClientViewModel representing the ClientEntity
+which it receives as an argument. And method ClientViewModelToClientEntity converts a ClientViewModel passsed as its first argument
+to a Client entity passed as its second argument. This back and forth conversion enforces a separation of concerns.
+
+#### Database Entities
+The Entities folder contains classes representing the database entities. There is one database entity corresponding to each application
+database in the OPIDDaily database.
+
+#### Data Contexts
+Application OPIDDDaily uses 2 data contexts: IdentityDB and OpidDailyDB. These contexts are defined as classes in the DataContexts folder. The
+OpidDailyDB class creates the OpidDailyDB context and Entity Framework Code First uses it to create tables in the database corresponding to the
+entity classes in the Entities folder. Thus, for example, the class variable declaration
+````
+   public DbSet<Client> Clients { get; set; }
+````
+causes Entity Framework to create table **Clients** in the database.
+
+#### Scripts
+The Scripts folder contains the JavaScript scripts used by application OPIDDaily. The MVC application template provisions the application
+with a set of generally useful scripts in an MVC application. Other scripts in the Scripts folder are added by adding packages through the
+NuGet package manager. The scripts in the subfolders
+
+* ClientHistory
+* Clients
+* Conversation
+* Dashboards
+* PocketChecks
+* ReviewClients
+
+all define jqGrids used by views in the application. The large number of jqGrids is evidence of the importance of this component to application
+OPIDDaily.
 ## Users
 OPIDDaily is a role-based system. Each registered user will be assigned a user role by the OPIDDaily administrator.
-The role that a user is assigned will determine the OPIDDaily features available to the user. A user's assigned role will depend upon whether
-the user volunteers at the front desk, is a volunteer interviewer or is a back office volunteer. In addition, there will be a manager's role
-to be assigned to Operation ID managers who want to watch the client processing flow during a day of operation.
-
-The OPIDDaily administrator will be in the role of Superadmin and will have access to features necessary for the maintenance of application OPIDDaily.
-There will be only one Superadmin account, but the credentials for this account will be available to maintainers of the application.
+The role that a user is assigned will determine the OPIDDaily features available to the user. A user's assigned role will depend upon
+wheterh thr user volunteers at the front desk, is a volunteer interviewer or is a back office volunteer. There will also be a SuperAdmin
+role. The single user in this role, the Superadmin, will have access to features necessary for the maintenance of application OPIDDaily.
+The credentials for this account will only be available to a select few individuals.
 
 ## The SuperAdmin User
 OPIDDaily defines a pre-registered SuperAdmin user who has privileges to
@@ -34,6 +76,7 @@ single user, the SuperAdmin, with role of Superadmin.
 
 ## MVC Routing
 Application OPIDDaily uses only the default routing rule supplied by the Visual Studio MVC 5 template. This default routing rule is found in
+````
 `.../App_Start/RouteConfig.cs`.
 
     routes.MapRoute(
@@ -41,7 +84,7 @@ Application OPIDDaily uses only the default routing rule supplied by the Visual 
       url: "{controller}/{action}/{id}",
       defaults: new { controller = "Users", action = "Index", id = UrlParameter.Optional }
     );
-
+````
 For the sake of simplicity, future development of application OPIDDaily should strive to keep this as the one and only routing rule.
 
 ## Role Controllers
@@ -84,6 +127,7 @@ each other and to restrict their access to portions of the website.
 
 ## The SharedController
 Each role controller derives from SharedController. The SharedController implements the shared editor functionality available to the different roles.
+The FrontDeskController, the BackOfficeController, the InterviewerController and the CaseManagerController all inherit from the SharedController.
 Deriving role controllers from a shared controller is an extremely useful technique for building a role-based editor.
 
 ## The UsersController
